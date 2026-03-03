@@ -7,7 +7,9 @@ class KBStyles {
   const KBStyles._();
 
   /// Generate the complete default CSS for knowledge base components.
-  static String generate() => '''
+  static String generate() =>
+      '''
+$_chromeStyles
 $_sidebarSections
 $_sidebarDetailsMarkers
 $_sidebarChevron
@@ -16,6 +18,333 @@ $_sidebarTreeConnectors
 $_sidebarLinks
 $_mediaStyles
 $_markdownAlerts
+''';
+
+  static const String _chromeStyles = '''
+.kb-page-shell {
+  min-height: 100vh;
+}
+
+.kb-layout-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.kb-main-area {
+  min-width: 0;
+}
+
+.kb-content-area {
+  width: 100%;
+}
+
+.kb-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--background) 94%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.kb-topbar.kb-topbar-bottom {
+  top: auto;
+  bottom: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+}
+
+.kb-topbar-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  min-height: 3.5rem;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.kb-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+.kb-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+}
+
+.kb-topbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--foreground);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.kb-topbar-brand:hover {
+  opacity: 0.88;
+}
+
+.kb-topbar-logo {
+  width: 1.125rem;
+  height: 1.125rem;
+  object-fit: contain;
+  border-radius: var(--radius-sm, 0.25rem);
+}
+
+.kb-topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  margin-left: 0.375rem;
+}
+
+.kb-topbar-link {
+  height: 2rem;
+  padding: 0 0.625rem;
+  border-radius: var(--radius-sm, 0.25rem);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.kb-topbar-link:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.kb-topbar-link.active {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.kb-topbar-github,
+.kb-theme-toggle {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--muted-foreground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.kb-topbar-github:hover,
+.kb-theme-toggle:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.theme-icon-dark {
+  display: none;
+}
+
+.dark .theme-icon-light,
+html.dark .theme-icon-light {
+  display: none;
+}
+
+.dark .theme-icon-dark,
+html.dark .theme-icon-dark {
+  display: block;
+}
+
+.kb-search {
+  position: relative;
+  width: min(25rem, 42vw);
+}
+
+.kb-search-input-wrap {
+  position: relative;
+}
+
+.kb-search-input {
+  width: 100%;
+  height: 2.25rem;
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  padding: 0 0.75rem 0 2rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kb-search-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.kb-search-input:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 30%, transparent);
+}
+
+.kb-search-icon {
+  position: absolute;
+  left: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.search-results {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  background: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 0.375rem);
+  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.2));
+  max-height: 22rem;
+  overflow-y: auto;
+  z-index: 70;
+}
+
+.search-results a:hover {
+  background: var(--accent) !important;
+}
+
+.kb-hamburger {
+  display: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--muted-foreground);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.kb-hamburger:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.kb-sidebar {
+  position: relative;
+  z-index: 30;
+  flex-shrink: 0;
+}
+
+.sidebar-header {
+  padding: 0.875rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sidebar-brand-title {
+  color: var(--foreground);
+  font-size: 0.925rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.sidebar-brand-subtitle {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  margin-top: 0.25rem;
+}
+
+.sidebar-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.sidebar-search {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 1280px) {
+  .kb-search {
+    width: min(20rem, 35vw);
+  }
+}
+
+@media (max-width: 1024px) {
+  .kb-topbar-nav {
+    display: none;
+  }
+
+  .kb-search {
+    width: min(18rem, 52vw);
+  }
+}
+
+@media (max-width: 900px) {
+  .kb-hamburger {
+    display: inline-flex;
+  }
+
+  .kb-search {
+    display: none;
+  }
+
+  .kb-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(22rem, 92vw);
+    max-width: 92vw;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.2));
+    background: var(--card);
+  }
+
+  .kb-sidebar > div {
+    width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    top: 0 !important;
+    position: relative !important;
+    background: var(--card) !important;
+  }
+
+  .kb-sidebar.open {
+    transform: translateX(0);
+  }
+}
 ''';
 
   /// Sidebar section and summary STRUCTURAL styles only

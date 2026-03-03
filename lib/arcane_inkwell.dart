@@ -27,8 +27,10 @@ library arcane_inkwell;
 
 // Re-export jaspr and arcane_jaspr for convenience (hide conflicts)
 export 'package:jaspr/jaspr.dart';
-export 'package:jaspr_content/jaspr_content.dart' hide TableOfContents, TocEntry;
-export 'package:arcane_jaspr/arcane_jaspr.dart' hide TableOfContents, ReadingTimeExtension;
+export 'package:jaspr_content/jaspr_content.dart'
+    hide TableOfContents, TocEntry;
+export 'package:arcane_jaspr/arcane_jaspr.dart'
+    hide TableOfContents, ReadingTimeExtension;
 
 // Configuration
 export 'src/config/site_config.dart';
@@ -41,6 +43,7 @@ export 'src/navigation/nav_builder.dart';
 // Layout components
 export 'src/layout/kb_layout.dart';
 export 'src/layout/kb_sidebar.dart';
+export 'src/layout/kb_top_bar.dart';
 export 'src/layout/kb_page_nav.dart';
 export 'src/layout/kb_related_pages.dart';
 export 'src/layout/kb_changelog.dart';

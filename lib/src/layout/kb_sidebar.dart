@@ -11,169 +11,177 @@ class KBSidebar extends StatelessComponent {
   final SiteConfig config;
   final NavManifest manifest;
   final String currentPath;
+  final bool showBranding;
+  final bool showSearch;
+  final bool showThemeToggle;
+  final String railTopOffset;
 
   const KBSidebar({
     required this.config,
     required this.manifest,
     required this.currentPath,
+    this.showBranding = true,
+    this.showSearch = true,
+    this.showThemeToggle = true,
+    this.railTopOffset = '0px',
   });
 
   @override
   Component build(BuildContext context) {
-    return ArcaneScrollRail(
-      width: config.sidebarWidth,
-      topOffset: '0px',
-      showBorder: true,
-      padding: '0',
-      scrollPersistenceId: 'kb-sidebar',
-      children: [
-        // Header section with branding and controls
-        _buildHeader(),
+    bool showHeader = showBranding || showSearch || showThemeToggle;
 
-        // Main navigation with tree view
-        nav(
-          classes: 'sidebar-nav',
-          styles: const Styles(raw: {
-            'padding': '0.75rem',
-            'display': 'flex',
-            'flex-direction': 'column',
-            'gap': '0.5rem',
-          }),
-          [
-            // Root-level items first (always visible, no section)
-            if (manifest.visibleItems.isNotEmpty)
-              _buildFixedSection(
-                'Pages',
-                ArcaneIcon.fileText(size: IconSize.sm),
-                manifest.visibleItems.map((NavItem item) => _buildNavItem(item)).toList(),
-              ),
-
-            // Then sections
-            for (final NavSection section in manifest.sortedSections)
-              _buildCollapsibleSection(section),
-          ],
-        ),
-      ],
-    );
+    return div(classes: 'kb-sidebar', [
+      ArcaneScrollRail(
+        width: config.sidebarWidth,
+        topOffset: railTopOffset,
+        showBorder: true,
+        padding: '0',
+        scrollPersistenceId: 'kb-sidebar',
+        children: [
+          if (showHeader) _buildHeader(),
+          nav(
+            classes: 'sidebar-nav',
+            styles: const Styles(
+              raw: {
+                'padding': '0.75rem',
+                'display': 'flex',
+                'flex-direction': 'column',
+                'gap': '0.5rem',
+              },
+            ),
+            [
+              if (manifest.visibleItems.isNotEmpty)
+                _buildFixedSection(
+                  'Pages',
+                  ArcaneIcon.fileText(size: IconSize.sm),
+                  manifest.visibleItems
+                      .map((NavItem item) => _buildNavItem(item))
+                      .toList(),
+                ),
+              for (NavSection section in manifest.sortedSections)
+                _buildCollapsibleSection(section),
+            ],
+          ),
+        ],
+      ),
+    ]);
   }
 
   /// Build the sidebar header with branding and controls
   Component _buildHeader() {
-    return div(
-      classes: 'sidebar-header',
-      [
-        // Brand section
-        div(
-          classes: 'sidebar-brand',
-          [
-            a(
-              href: config.fullPath('/'),
-              styles: const Styles(raw: {'text-decoration': 'none'}),
-              [
-                div(classes: 'sidebar-brand-title', [Component.text(config.name)]),
-                if (config.description != null)
-                  div(classes: 'sidebar-brand-subtitle', [Component.text(config.description!)]),
-              ],
-            ),
-          ],
-        ),
+    List<Component> children = <Component>[];
 
-        // Search and theme toggle row
-        div(
-          classes: 'sidebar-controls',
-          [
-            // Search - entire structure is raw HTML to bypass Jaspr client hydration
-            // This ensures vanilla JS event handlers work without framework interference
-            if (config.searchEnabled)
-              const RawText('''
-<div class="sidebar-search">
-  <input id="kb-search" type="text" placeholder="Search..." autocomplete="off">
-  <div class="search-icon">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+    if (showBranding) {
+      children.add(
+        div(classes: 'sidebar-brand', [
+          a(
+            href: config.fullPath('/'),
+            styles: const Styles(raw: {'text-decoration': 'none'}),
+            [
+              div(classes: 'sidebar-brand-title', [
+                Component.text(config.name),
+              ]),
+              if (config.description != null)
+                div(classes: 'sidebar-brand-subtitle', [
+                  Component.text(config.description!),
+                ]),
+            ],
+          ),
+        ]),
+      );
+    }
+
+    bool hasControls = showSearch || showThemeToggle;
+    if (hasControls) {
+      children.add(
+        div(classes: 'sidebar-controls', [
+          if (showSearch)
+            const RawText('''
+<div class="sidebar-search kb-search">
+  <div class="kb-search-input-wrap">
+    <input id="kb-search" class="kb-search-input" type="text" placeholder="Search docs..." autocomplete="off">
+    <div class="kb-search-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+    </div>
   </div>
   <div id="search-results" class="search-results"></div>
 </div>
 '''),
-            // Theme toggle button
-            if (config.themeToggleEnabled)
-              button(
-                id: 'theme-toggle',
-                classes: 'sidebar-theme-toggle',
-                attributes: const {'type': 'button', 'aria-label': 'Toggle theme'},
-                [
-                  span(classes: 'theme-icon-light', [ArcaneIcon.sun(size: IconSize.sm)]),
-                  span(classes: 'theme-icon-dark', [ArcaneIcon.moon(size: IconSize.sm)]),
-                ],
-              ),
-          ],
-        ),
-      ],
-    );
+          if (showThemeToggle)
+            button(
+              id: 'theme-toggle',
+              classes: 'kb-theme-toggle',
+              attributes: const {
+                'type': 'button',
+                'aria-label': 'Toggle theme',
+              },
+              [
+                span(classes: 'theme-icon-light', [
+                  ArcaneIcon.sun(size: IconSize.sm),
+                ]),
+                span(classes: 'theme-icon-dark', [
+                  ArcaneIcon.moon(size: IconSize.sm),
+                ]),
+              ],
+            ),
+        ]),
+      );
+    }
+
+    return div(classes: 'sidebar-header', children);
   }
 
   /// Build a fixed section that's always expanded (no toggle)
-  Component _buildFixedSection(String title, Component icon, List<Component> items) {
-    return div(
-      classes: 'sidebar-section',
-      [
-        // Section header
-        div(
-          classes: 'sidebar-section-header',
-          [
-            icon,
-            span([Component.text(title)]),
-          ],
-        ),
-        // Tree items container
-        div(
-          classes: 'sidebar-tree',
-          [
-            for (final Component item in items) item,
-          ],
-        ),
-      ],
-    );
+  Component _buildFixedSection(
+    String title,
+    Component icon,
+    List<Component> items,
+  ) {
+    return div(classes: 'sidebar-section', [
+      // Section header
+      div(classes: 'sidebar-section-header', [
+        icon,
+        span([Component.text(title)]),
+      ]),
+      // Tree items container
+      div(classes: 'sidebar-tree', [for (final Component item in items) item]),
+    ]);
   }
 
   /// Build a collapsible section using native details/summary
   Component _buildCollapsibleSection(NavSection section) {
-    final bool shouldExpand = section.shouldExpandFor(currentPath) || !section.collapsed;
+    final bool shouldExpand =
+        section.shouldExpandFor(currentPath) || !section.collapsed;
 
-    return div(
-      classes: 'sidebar-section',
-      [
-        Component.element(
-          tag: 'details',
-          classes: 'sidebar-details',
-          attributes: shouldExpand ? {'open': ''} : {},
-          children: [
-            Component.element(
-              tag: 'summary',
-              classes: 'sidebar-summary',
-              styles: Styles(raw: {'padding-left': config.sidebarTreeIndent}),
-              children: [
-                if (section.icon != null) _buildIcon(section.icon!),
-                span([Component.text(section.title)]),
-                span(classes: 'sidebar-chevron', [
-                  ArcaneIcon.chevronDown(size: IconSize.sm),
-                ]),
-              ],
-            ),
-            div(
-              classes: 'sidebar-tree',
-              [
-                // Items in this section
-                for (final NavItem item in section.visibleItems)
-                  _buildNavItem(item),
-                // Nested sections
-                for (final NavSection nested in section.sortedSections)
-                  _buildCollapsibleSection(nested),
-              ],
-            ),
-          ],
-        ),
-      ],
-    );
+    return div(classes: 'sidebar-section', [
+      Component.element(
+        tag: 'details',
+        classes: 'sidebar-details',
+        attributes: shouldExpand ? {'open': ''} : {},
+        children: [
+          Component.element(
+            tag: 'summary',
+            classes: 'sidebar-summary',
+            styles: Styles(raw: {'padding-left': config.sidebarTreeIndent}),
+            children: [
+              if (section.icon != null) _buildIcon(section.icon!),
+              span([Component.text(section.title)]),
+              span(classes: 'sidebar-chevron', [
+                ArcaneIcon.chevronDown(size: IconSize.sm),
+              ]),
+            ],
+          ),
+          div(classes: 'sidebar-tree', [
+            // Items in this section
+            for (final NavItem item in section.visibleItems)
+              _buildNavItem(item),
+            // Nested sections
+            for (final NavSection nested in section.sortedSections)
+              _buildCollapsibleSection(nested),
+          ]),
+        ],
+      ),
+    ]);
   }
 
   /// Build a navigation item that links to a page
@@ -181,20 +189,17 @@ class KBSidebar extends StatelessComponent {
     final String fullHref = config.fullPath(item.path);
     final bool isActive = _isActive(item.path);
 
-    return div(
-      classes: 'sidebar-tree-item',
-      [
-        a(
-          href: fullHref,
-          classes: 'sidebar-link${isActive ? ' active' : ''}',
-          styles: Styles(raw: {'padding-left': config.sidebarTreeIndent}),
-          [
-            if (item.icon != null) _buildIcon(item.icon!),
-            Component.text(item.title),
-          ],
-        ),
-      ],
-    );
+    return div(classes: 'sidebar-tree-item', [
+      a(
+        href: fullHref,
+        classes: 'sidebar-link${isActive ? ' active' : ''}',
+        styles: Styles(raw: {'padding-left': config.sidebarTreeIndent}),
+        [
+          if (item.icon != null) _buildIcon(item.icon!),
+          Component.text(item.title),
+        ],
+      ),
+    ]);
   }
 
   /// Build an icon from a name, SVG markup, or SVG URL.
@@ -208,13 +213,15 @@ class KBSidebar extends StatelessComponent {
     if (iconName.trimLeft().startsWith('<svg')) {
       return span(
         classes: 'sidebar-icon sidebar-icon-svg',
-        styles: const Styles(raw: {
-          'display': 'inline-flex',
-          'align-items': 'center',
-          'justify-content': 'center',
-          'width': '16px',
-          'height': '16px',
-        }),
+        styles: const Styles(
+          raw: {
+            'display': 'inline-flex',
+            'align-items': 'center',
+            'justify-content': 'center',
+            'width': '16px',
+            'height': '16px',
+          },
+        ),
         [RawText(iconName)],
       );
     }
@@ -225,10 +232,7 @@ class KBSidebar extends StatelessComponent {
         classes: 'sidebar-icon sidebar-icon-svg',
         src: iconName.startsWith('/') ? config.fullPath(iconName) : iconName,
         alt: '',
-        styles: const Styles(raw: {
-          'width': '16px',
-          'height': '16px',
-        }),
+        styles: const Styles(raw: {'width': '16px', 'height': '16px'}),
       );
     }
 

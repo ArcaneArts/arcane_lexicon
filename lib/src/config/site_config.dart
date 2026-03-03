@@ -79,6 +79,10 @@ class SiteConfig {
   /// Controls spacing between tree connector lines and icons.
   final String sidebarTreeIndent;
 
+  final bool navigationBarEnabled;
+
+  final KBNavigationBarPosition navigationBarPosition;
+
   const SiteConfig({
     required this.name,
     this.description,
@@ -105,6 +109,8 @@ class SiteConfig {
     this.ratingThankYouText = 'Thanks for your feedback!',
     this.sidebarWidth = '280px',
     this.sidebarTreeIndent = '10px',
+    this.navigationBarEnabled = true,
+    this.navigationBarPosition = KBNavigationBarPosition.top,
   });
 
   /// Get the full URL for a path, including the base URL.
@@ -138,18 +144,17 @@ class SiteConfig {
     final String contentPath = '$contentDirectory/$filePath';
 
     // Generate GitHub edit URL
-    final String repoUrl =
-        githubUrl!.endsWith('/') ? githubUrl!.substring(0, githubUrl!.length - 1) : githubUrl!;
+    final String repoUrl = githubUrl!.endsWith('/')
+        ? githubUrl!.substring(0, githubUrl!.length - 1)
+        : githubUrl!;
     return '$repoUrl/edit/$editBranch/$contentPath';
   }
 }
 
 /// Theme mode options for the knowledge base.
-enum KBThemeMode {
-  dark,
-  light,
-  system,
-}
+enum KBThemeMode { dark, light, system }
+
+enum KBNavigationBarPosition { top, bottom }
 
 /// A navigation link for the header.
 class NavLink {
@@ -170,11 +175,7 @@ class SocialLink {
   final String url;
   final String icon;
 
-  const SocialLink({
-    required this.name,
-    required this.url,
-    required this.icon,
-  });
+  const SocialLink({required this.name, required this.url, required this.icon});
 
   /// Common social link presets.
   static SocialLink github(String url) =>

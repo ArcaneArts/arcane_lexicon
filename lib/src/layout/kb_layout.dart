@@ -9,6 +9,7 @@ import '../scripts/kb_scripts.dart';
 import '../styles/kb_styles.dart';
 import 'kb_rating.dart';
 import 'kb_sidebar.dart';
+import 'kb_top_bar.dart';
 
 /// Callback type for building demo components.
 ///
@@ -58,13 +59,30 @@ class KBLayout extends PageLayoutBase {
     }
 
     // Viewport and theme color
-    yield const meta(name: 'viewport', content: 'width=device-width, initial-scale=1');
+    yield const meta(
+      name: 'viewport',
+      content: 'width=device-width, initial-scale=1',
+    );
     yield const meta(name: 'theme-color', content: '#09090b');
 
     // Favicons
-    yield link(rel: 'icon', type: 'image/x-icon', href: '$assetPrefix/assets/favicon.ico');
-    yield link(rel: 'icon', type: 'image/png', href: '$assetPrefix/assets/icon-32.png', attributes: const {'sizes': '32x32'});
-    yield link(rel: 'icon', type: 'image/png', href: '$assetPrefix/assets/icon-16.png', attributes: const {'sizes': '16x16'});
+    yield link(
+      rel: 'icon',
+      type: 'image/x-icon',
+      href: '$assetPrefix/assets/favicon.ico',
+    );
+    yield link(
+      rel: 'icon',
+      type: 'image/png',
+      href: '$assetPrefix/assets/icon-32.png',
+      attributes: const {'sizes': '32x32'},
+    );
+    yield link(
+      rel: 'icon',
+      type: 'image/png',
+      href: '$assetPrefix/assets/icon-16.png',
+      attributes: const {'sizes': '16x16'},
+    );
 
     // Inject stylesheet base CSS (contains all CSS variables and base styles)
     yield Component.element(
@@ -108,16 +126,19 @@ class KBLayout extends PageLayoutBase {
     // Highlight.js for syntax highlighting
     yield const link(
       rel: 'stylesheet',
-      href: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css',
+      href:
+          'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css',
     );
     yield const script(
       attributes: {
-        'src': 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js',
+        'src':
+            'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js',
       },
     );
     yield const script(
       attributes: {
-        'src': 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js',
+        'src':
+            'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js',
       },
     );
 
@@ -259,9 +280,10 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
     // Dark mode uses .dark class (defined in stylesheet baseCss)
     final String themeClass = _isDark ? 'dark' : '';
     final String? stylesheetClass = component.stylesheet.bodyClass;
-    final String rootClasses = [themeClass, stylesheetClass]
-        .where((String? c) => c != null && c.isNotEmpty)
-        .join(' ');
+    final String rootClasses = [
+      themeClass,
+      stylesheetClass,
+    ].where((String? c) => c != null && c.isNotEmpty).join(' ');
 
     // Wrap with ArcaneThemeProvider to enable context.renderers access
     return ArcaneThemeProvider(
@@ -276,28 +298,62 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
           textColor: TextColor.primary,
           fontFamily: FontFamily.sans,
         ),
-        children: [
-          _buildPageLayout(),
-          ..._buildScripts(),
-        ],
+        children: [_buildPageLayout(), ..._buildScripts()],
       ),
     );
   }
 
   /// Main page layout structure
   Component _buildPageLayout() {
+    bool showNavigationBar = component.config.navigationBarEnabled;
+    bool useTopPosition =
+        component.config.navigationBarPosition == KBNavigationBarPosition.top;
+    bool showSidebarControls = !showNavigationBar;
+    String sidebarTopOffset = showNavigationBar && useTopPosition
+        ? '56px'
+        : '0px';
+
     return ArcaneDiv(
+      classes: 'kb-page-shell',
       styles: const ArcaneStyleData(
         display: Display.flex,
+        flexDirection: FlexDirection.column,
         minHeight: '100vh',
       ),
       children: [
-        KBSidebar(
-          config: component.config,
-          manifest: component.manifest,
-          currentPath: component.currentPath,
+        if (showNavigationBar && useTopPosition)
+          KBTopBar(
+            config: component.config,
+            currentPath: component.currentPath,
+            bottom: false,
+          ),
+        ArcaneDiv(
+          classes: 'kb-layout-body',
+          styles: const ArcaneStyleData(
+            display: Display.flex,
+            flexGrow: 1,
+            minHeight: '0',
+          ),
+          children: [
+            KBSidebar(
+              config: component.config,
+              manifest: component.manifest,
+              currentPath: component.currentPath,
+              showBranding: showSidebarControls,
+              showSearch: showSidebarControls && component.config.searchEnabled,
+              showThemeToggle:
+                  showSidebarControls && component.config.themeToggleEnabled,
+              railTopOffset: sidebarTopOffset,
+            ),
+            _buildMainArea(),
+          ],
         ),
-        _buildMainArea(),
+        if (showNavigationBar && !useTopPosition)
+          KBTopBar(
+            config: component.config,
+            currentPath: component.currentPath,
+            bottom: true,
+          ),
       ],
     );
   }
@@ -305,21 +361,21 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
   /// Main content area
   Component _buildMainArea() {
     return ArcaneDiv(
+      classes: 'kb-main-area',
       styles: const ArcaneStyleData(
         flexGrow: 1,
         display: Display.flex,
         flexDirection: FlexDirection.column,
-        minHeight: '100vh',
+        minHeight: '0',
       ),
-      children: [
-        _buildContentArea(),
-      ],
+      children: [_buildContentArea()],
     );
   }
 
   /// Content area with main content and TOC
   Component _buildContentArea() {
     return ArcaneDiv(
+      classes: 'kb-content-area',
       styles: const ArcaneStyleData(
         display: Display.flex,
         gap: Gap.xl,
@@ -339,7 +395,8 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
 
   /// Main content section
   Component _buildMainContent() {
-    final bool hasMetadata = component.tags.isNotEmpty ||
+    final bool hasMetadata =
+        component.tags.isNotEmpty ||
         component.readingTime != null ||
         component.author != null ||
         component.date != null ||
@@ -352,10 +409,7 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
     }
 
     return ArcaneDiv(
-      styles: const ArcaneStyleData(
-        flex: FlexPreset.expand,
-        minWidth: '0',
-      ),
+      styles: const ArcaneStyleData(flex: FlexPreset.expand, minWidth: '0'),
       children: [
         _buildBreadcrumbs(),
         if (component.title != null) _buildTitle(),
@@ -455,7 +509,9 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
             ),
             children: [
               ArcaneIcon.edit(size: IconSize.sm),
-              ArcaneText('Updated ${_formatLastModified(component.lastModified!)}'),
+              ArcaneText(
+                'Updated ${_formatLastModified(component.lastModified!)}',
+              ),
             ],
           ),
 
@@ -467,23 +523,27 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
               flexWrap: FlexWrap.wrap,
               gap: Gap.xs,
             ),
-            children: component.tags.map((String tag) => ArcaneDiv(
-                  classes: 'kb-tag',
-                  styles: const ArcaneStyleData(
-                    display: Display.inlineFlex,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    gap: Gap.xs,
-                    fontSize: FontSize.xs,
-                    padding: PaddingPreset.xs,
-                    background: Background.muted,
-                    borderRadius: Radius.sm,
-                    textColor: TextColor.mutedForeground,
+            children: component.tags
+                .map(
+                  (String tag) => ArcaneDiv(
+                    classes: 'kb-tag',
+                    styles: const ArcaneStyleData(
+                      display: Display.inlineFlex,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      gap: Gap.xs,
+                      fontSize: FontSize.xs,
+                      padding: PaddingPreset.xs,
+                      background: Background.muted,
+                      borderRadius: Radius.sm,
+                      textColor: TextColor.mutedForeground,
+                    ),
+                    children: [
+                      ArcaneIcon.tag(size: IconSize.xs),
+                      ArcaneText(tag),
+                    ],
                   ),
-                  children: [
-                    ArcaneIcon.tag(size: IconSize.xs),
-                    ArcaneText(tag),
-                  ],
-                )).toList(),
+                )
+                .toList(),
           ),
       ],
     );
@@ -514,24 +574,28 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
             flexWrap: FlexWrap.wrap,
             gap: Gap.sm,
           ),
-          children: component.tags.map((String tag) => ArcaneDiv(
-                classes: 'kb-tag-large',
-                styles: const ArcaneStyleData(
-                  display: Display.inlineFlex,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  gap: Gap.xs,
-                  fontSize: FontSize.sm,
-                  padding: PaddingPreset.sm,
-                  background: Background.surface,
-                  border: BorderPreset.subtle,
-                  borderRadius: Radius.md,
-                  textColor: TextColor.primary,
+          children: component.tags
+              .map(
+                (String tag) => ArcaneDiv(
+                  classes: 'kb-tag-large',
+                  styles: const ArcaneStyleData(
+                    display: Display.inlineFlex,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    gap: Gap.xs,
+                    fontSize: FontSize.sm,
+                    padding: PaddingPreset.sm,
+                    background: Background.surface,
+                    border: BorderPreset.subtle,
+                    borderRadius: Radius.md,
+                    textColor: TextColor.primary,
+                  ),
+                  children: [
+                    ArcaneIcon.tag(size: IconSize.sm),
+                    ArcaneText(tag),
+                  ],
                 ),
-                children: [
-                  ArcaneIcon.tag(size: IconSize.sm),
-                  ArcaneText(tag),
-                ],
-              )).toList(),
+              )
+              .toList(),
         ),
       ],
     );
@@ -540,7 +604,10 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
   /// Build breadcrumbs from current path
   Component _buildBreadcrumbs() {
     final String path = component.currentPath;
-    final List<String> segments = path.split('/').where((String segment) => segment.isNotEmpty).toList();
+    final List<String> segments = path
+        .split('/')
+        .where((String segment) => segment.isNotEmpty)
+        .toList();
 
     if (segments.isEmpty) {
       return const ArcaneDiv(children: []);
@@ -549,10 +616,9 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
     final List<BreadcrumbItem> items = <BreadcrumbItem>[];
 
     // Add "Home" as first item
-    items.add(BreadcrumbItem(
-      label: 'Home',
-      href: component.config.fullPath('/'),
-    ));
+    items.add(
+      BreadcrumbItem(label: 'Home', href: component.config.fullPath('/')),
+    );
 
     // Build remaining segments
     String currentHref = '';
@@ -561,16 +627,16 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
       final bool isLast = i == segments.length - 1;
       final String label = _formatSegment(segments[i]);
 
-      items.add(BreadcrumbItem(
-        label: label,
-        href: isLast ? null : component.config.fullPath(currentHref),
-      ));
+      items.add(
+        BreadcrumbItem(
+          label: label,
+          href: isLast ? null : component.config.fullPath(currentHref),
+        ),
+      );
     }
 
     return ArcaneDiv(
-      styles: const ArcaneStyleData(
-        margin: MarginPreset.bottomMd,
-      ),
+      styles: const ArcaneStyleData(margin: MarginPreset.bottomMd),
       children: [
         ArcaneBreadcrumbs(
           items: items,
@@ -585,7 +651,10 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
   String _formatSegment(String segment) {
     return segment
         .split('-')
-        .map((String word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1))
+        .map(
+          (String word) =>
+              word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1),
+        )
         .join(' ');
   }
 
@@ -594,8 +663,18 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
     try {
       final DateTime dt = DateTime.parse(isoDate);
       final List<String> months = <String>[
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
     } catch (_) {
@@ -640,11 +719,7 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
           'overflow-y': 'auto',
         },
       ),
-      children: [
-        ArcaneToc.custom(
-          content: component.toc!.build(),
-        ),
-      ],
+      children: [ArcaneToc.custom(content: component.toc!.build())],
     );
   }
 

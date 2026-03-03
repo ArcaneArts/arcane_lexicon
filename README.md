@@ -107,6 +107,8 @@ SiteConfig(
   searchEnabled: true,
   tocEnabled: true,
   themeToggleEnabled: true,
+  navigationBarEnabled: true,
+  navigationBarPosition: KBNavigationBarPosition.top,
   headerLinks: [NavLink(label: 'GitHub', href: '...', external: true)],
   footerText: 'Built with Arcane Inkwell',
 )

@@ -18,16 +18,20 @@ void main() async {
         githubUrl: 'https://github.com/ArcaneArts/arcane_inkwell',
         showEditLink: true,
         editBranch: 'main',
+        navigationBarEnabled: true,
+        navigationBarPosition: KBNavigationBarPosition.top,
         headerLinks: [
           NavLink(label: 'Docs', href: '/'),
           NavLink(
-              label: 'GitHub',
-              href: 'https://github.com/ArcaneArts/arcane_inkwell',
-              external: true),
+            label: 'GitHub',
+            href: 'https://github.com/ArcaneArts/arcane_inkwell',
+            external: true,
+          ),
         ],
         footerText: 'Built with Arcane Inkwell',
         sidebarFooter: 'v1.0.0',
-        sidebarFooterUrl: 'https://github.com/ArcaneArts/arcane_inkwell/releases',
+        sidebarFooterUrl:
+            'https://github.com/ArcaneArts/arcane_inkwell/releases',
       ),
       // Single line theming - swap themes by changing this line:
       // stylesheet: const CodexStylesheet(theme: CodexTheme.blue),
