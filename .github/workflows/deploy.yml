@@ -7,6 +7,7 @@ on:
       - 'example/**'
       - 'lib/**'
       - 'scripts/**'
+      - '.github/scripts/**'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
@@ -30,6 +31,9 @@ jobs:
         uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
+
+      - name: Configure remote dependencies
+        run: bash .github/scripts/use-remote-deps.sh
 
       - name: Install dependencies
         working-directory: example
