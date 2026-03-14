@@ -1,4 +1,8 @@
-import 'package:arcane_jaspr/arcane_jaspr.dart' hide TableOfContents;
+import 'package:arcane_jaspr/arcane_jaspr.dart';
+import 'package:arcane_jaspr/html.dart' show ArcaneDiv;
+import 'package:arcane_jaspr/web.dart'
+    show Component, RawText, StatefulComponent, div, link, meta, script;
+import 'package:jaspr/jaspr.dart' as jaspr show State;
 import 'package:jaspr_content/jaspr_content.dart';
 
 import '../config/site_config.dart';
@@ -133,11 +137,6 @@ class KBLayout extends PageLayoutBase {
     yield link(rel: 'stylesheet', href: '$assetPrefix/styles.css');
 
     // Highlight.js for syntax highlighting
-    yield const link(
-      rel: 'stylesheet',
-      href:
-          'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css',
-    );
     yield const script(
       attributes: {
         'src':
@@ -289,15 +288,9 @@ class KBLayout extends PageLayoutBase {
       '../../fonts/lucide/lucide.ttf',
     ];
     final List<String> candidates = <String>[
-      ...woff2Urls.map(
-        (String url) => "url('$url') format('woff2')",
-      ),
-      ...woffUrls.map(
-        (String url) => "url('$url') format('woff')",
-      ),
-      ...ttfUrls.map(
-        (String url) => "url('$url') format('truetype')",
-      ),
+      ...woff2Urls.map((String url) => "url('$url') format('woff2')"),
+      ...woffUrls.map((String url) => "url('$url') format('woff')"),
+      ...ttfUrls.map((String url) => "url('$url') format('truetype')"),
     ];
     final String rewrittenSrc = candidates.join(',\n       ');
     final String rewritten = css.replaceFirstMapped(
@@ -377,10 +370,10 @@ class ThemedKBPage extends StatefulComponent {
   });
 
   @override
-  State<ThemedKBPage> createState() => _ThemedKBPageState();
+  jaspr.State<ThemedKBPage> createState() => _ThemedKBPageState();
 }
 
-class _ThemedKBPageState extends State<ThemedKBPage> {
+class _ThemedKBPageState extends jaspr.State<ThemedKBPage> {
   bool _isDark = true;
 
   @override

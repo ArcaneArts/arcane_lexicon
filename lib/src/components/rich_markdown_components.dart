@@ -1,4 +1,6 @@
 import 'package:arcane_jaspr/arcane_jaspr.dart';
+import 'package:arcane_jaspr/html.dart' show ArcaneDiv, ArcaneLink;
+import 'package:arcane_jaspr/web.dart' show Component;
 import 'package:jaspr_content/components/tabs.dart';
 import 'package:jaspr_content/jaspr_content.dart';
 

@@ -1,4 +1,7 @@
 import 'package:arcane_jaspr/arcane_jaspr.dart';
+import 'package:arcane_jaspr/html.dart' show ArcaneDiv;
+import 'package:arcane_jaspr/web.dart'
+    show Component, StatelessComponent, Styles, button, div, span;
 
 /// Callback type for handling rating submissions.
 ///

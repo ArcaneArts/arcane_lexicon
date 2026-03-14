@@ -1,7 +1,7 @@
 import 'dart:io' as io;
 
 import 'package:arcane_jaspr/arcane_jaspr.dart'
-    hide TableOfContents, ReadingTimeExtension;
+    hide ReadingTimeExtension;
 import 'package:jaspr_content/jaspr_content.dart';
 
 import '../config/site_config.dart';

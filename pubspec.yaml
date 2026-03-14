@@ -1,6 +1,7 @@
 name: arcane_inkwell
 description: Transform markdown directories into beautiful documentation websites with auto-generated navigation, search, theming, and more. Built on Jaspr.
-version: 1.2.0
+version: 1.3.0
+publish_to: none
 repository: https://github.com/ArcaneArts/arcane_inkwell
 homepage: https://github.com/ArcaneArts/arcane_inkwell
 documentation: https://github.com/ArcaneArts/arcane_inkwell#readme

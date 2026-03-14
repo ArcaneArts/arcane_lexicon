@@ -1,4 +1,6 @@
-import 'package:arcane_jaspr/arcane_jaspr.dart' hide TableOfContents;
+import 'package:arcane_jaspr/arcane_jaspr.dart';
+import 'package:arcane_jaspr/web.dart'
+    show Component, RawText, StatelessComponent, Styles, a, button, div, img, nav, span;
 
 import '../config/site_config.dart';
 import '../navigation/nav_item.dart';

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-13
+
+### Changed
+
+- **ArcaneJaspr 3.1 Surface Compatibility**
+  - Updated `arcane_inkwell` to work with the Flutter-first `arcane_jaspr` primary import
+  - Layout and rich markdown files now import low-level Jaspr and HTML surfaces explicitly instead of assuming raw `Component`, DOM helpers, and HTML wrappers come from `package:arcane_jaspr/arcane_jaspr.dart`
+  - Adjusted the public export surface to avoid the `State` export collision introduced by the new Flutter-shaped base types
+
+### Fixed
+
+- **Docs Pipeline Compatibility**
+  - Restored analyzer compatibility after the ArcaneJaspr surface split so the docs package no longer fails on missing `Component`, `ArcaneDiv`, `ArcaneLink`, or raw DOM helpers
+
 ## [x.x.x]
 
 ### Added
