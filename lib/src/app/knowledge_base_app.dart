@@ -1,7 +1,6 @@
 import 'dart:io' as io;
 
-import 'package:arcane_jaspr/arcane_jaspr.dart'
-    hide ReadingTimeExtension;
+import 'package:arcane_jaspr/arcane_jaspr.dart' hide ReadingTimeExtension;
 import 'package:jaspr_content/jaspr_content.dart';
 
 import '../config/site_config.dart';
@@ -23,7 +22,17 @@ export '../layout/kb_layout.dart' show DemoBuilder;
 ///
 /// Example usage with 1-line theming:
 /// ```dart
+/// import 'package:arcane_jaspr_neon/arcane_jaspr_neon.dart';
+/// import 'package:arcane_jaspr_shadcn/arcane_jaspr_shadcn.dart';
 /// import 'package:arcane_lexicon/arcane_lexicon.dart' hide runApp;
+///
+/// const ArcaneStylesheet shadcnStylesheet = ShadcnStylesheet(
+///   theme: ShadcnTheme.charcoal,
+/// );
+/// const ArcaneStylesheet neonStylesheet = NeonStylesheet(
+///   theme: NeonTheme.green,
+/// );
+/// const ArcaneStylesheet selectedStylesheet = shadcnStylesheet;
 ///
 /// void main() async {
 ///   Jaspr.initializeApp(options: defaultServerOptions);
@@ -33,8 +42,7 @@ export '../layout/kb_layout.dart' show DemoBuilder;
 ///         name: 'My Docs',
 ///         contentDirectory: 'content',
 ///       ),
-///       // Single line theming - swap themes by changing this line:
-///       stylesheet: const ShadcnStylesheet(theme: ShadcnTheme.charcoal),
+///       stylesheet: selectedStylesheet,
 ///     ),
 ///   );
 /// }
@@ -57,6 +65,7 @@ class KnowledgeBaseApp {
     required ArcaneStylesheet stylesheet,
     List<PageExtension>? extensions,
     List<CustomComponent>? components,
+    List<KBStylesheetOption> stylesheetOptions = const <KBStylesheetOption>[],
     DemoBuilder? demoBuilder,
     bool generateSearchIndex = true,
   }) async {
@@ -73,13 +82,18 @@ class KnowledgeBaseApp {
     }
 
     // Create scripts
-    final KBScripts scripts = KBScripts(basePath: config.baseUrl);
+    KBScripts scripts = KBScripts(
+      basePath: config.baseUrl,
+      stylesheetOptions: stylesheetOptions,
+      defaultStylesheetId: _defaultStylesheetId(stylesheet, stylesheetOptions),
+    );
 
     // Create layout
     final KBLayout layout = KBLayout(
       config: config,
       manifest: manifest,
       stylesheet: stylesheet,
+      stylesheetOptions: stylesheetOptions,
       scripts: scripts,
       demoBuilder: demoBuilder,
     );
@@ -146,16 +160,22 @@ class KnowledgeBaseApp {
     required ArcaneStylesheet stylesheet,
     List<PageExtension>? extensions,
     List<CustomComponent>? components,
+    List<KBStylesheetOption> stylesheetOptions = const <KBStylesheetOption>[],
     DemoBuilder? demoBuilder,
   }) {
     // Create scripts
-    final KBScripts scripts = KBScripts(basePath: config.baseUrl);
+    KBScripts scripts = KBScripts(
+      basePath: config.baseUrl,
+      stylesheetOptions: stylesheetOptions,
+      defaultStylesheetId: _defaultStylesheetId(stylesheet, stylesheetOptions),
+    );
 
     // Create layout
     final KBLayout layout = KBLayout(
       config: config,
       manifest: manifest,
       stylesheet: stylesheet,
+      stylesheetOptions: stylesheetOptions,
       scripts: scripts,
       demoBuilder: demoBuilder,
     );
@@ -179,5 +199,20 @@ class KnowledgeBaseApp {
       extensions: [...defaultExtensions, ...?extensions],
       components: [...defaultComponents, ...?components],
     );
+  }
+
+  static String _defaultStylesheetId(
+    ArcaneStylesheet stylesheet,
+    List<KBStylesheetOption> stylesheetOptions,
+  ) {
+    for (KBStylesheetOption option in stylesheetOptions) {
+      if (identical(option.stylesheet, stylesheet)) {
+        return option.id;
+      }
+    }
+    if (stylesheetOptions.isEmpty) {
+      return '';
+    }
+    return stylesheetOptions.first.id;
   }
 }

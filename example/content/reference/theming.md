@@ -45,7 +45,7 @@ Clean, modern design based on shadcn/ui:
 stylesheet: const ShadcnStylesheet(theme: ShadcnTheme.midnight)
 ```
 
-### CodexStylesheet
+### NeonStylesheet
 
 Gamer-inspired design with neon aesthetics:
 - OLED-optimized dark backgrounds
@@ -54,7 +54,7 @@ Gamer-inspired design with neon aesthetics:
 - Custom gaming-style fonts
 
 ```dart
-stylesheet: const CodexStylesheet(theme: CodexTheme.green)
+stylesheet: const NeonStylesheet(theme: NeonTheme.green)
 ```
 
 ## ShadcnTheme Options
@@ -99,18 +99,18 @@ ShadcnStylesheet(theme: ShadcnTheme.slate)
 ShadcnStylesheet(theme: ShadcnTheme.lavender)
 ```
 
-## CodexTheme Options
+## NeonTheme Options
 
-Neon accent colors for the Codex stylesheet:
+Neon accent colors for the Neon stylesheet:
 
 | Theme | Color | Description |
 |-------|-------|-------------|
-| `green` | `#10b981` | Emerald green (default) |
+| `green` | `#00f5a0` | Cyan-green neon (default) |
 | `red` | `#ef4444` | Bright red |
-| `blue` | `#3b82f6` | Electric blue |
+| `blue` | `#00d9ff` | Electric blue |
 | `purple` | `#8b5cf6` | Vibrant purple |
-| `cyan` | `#22d3ee` | Neon cyan |
-| `pink` | `#ec4899` | Hot pink |
+| `cyan` | `#00e5ff` | Neon cyan |
+| `pink` | `#ff2bd6` | Hot pink |
 | `orange` | `#f97316` | Bright orange |
 | `rainbow` | Animated | RGB color cycling |
 
@@ -118,13 +118,13 @@ Neon accent colors for the Codex stylesheet:
 
 ```dart
 // Emerald gamer aesthetic
-CodexStylesheet(theme: CodexTheme.green)
+NeonStylesheet(theme: NeonTheme.green)
 
 // Cyberpunk purple
-CodexStylesheet(theme: CodexTheme.purple)
+NeonStylesheet(theme: NeonTheme.purple)
 
 // Animated rainbow
-CodexStylesheet(theme: CodexTheme.rainbow)
+NeonStylesheet(theme: NeonTheme.rainbow)
 ```
 
 ## Theme Toggle
@@ -156,16 +156,16 @@ SiteConfig(
 - **Body**: Inter (loaded from Google Fonts)
 - **Monospace**: System monospace stack
 
-### CodexStylesheet Fonts
+### NeonStylesheet Fonts
 
-The Codex theme uses custom fonts that must be included in your assets:
+The Neon theme uses custom fonts that must be included in your assets:
 
 - **Headings**: ITCAvantGardeStd
 - **Body**: Akzidenz-GroteskPro
 - **Code**: Hack
 
 > [!IMPORTANT]
-> CodexStylesheet requires font files in `/assets/fonts/`. See the arcane_jaspr documentation for font setup.
+> NeonStylesheet requires font files in `/assets/fonts/`. See the arcane_jaspr documentation for font setup.
 
 ## Custom CSS
 
@@ -204,7 +204,7 @@ Both stylesheets expose CSS variables for customization:
 ```css
 --font-sans        /* Body font */
 --font-mono        /* Code font */
---font-heading     /* Heading font (Codex only) */
+--font-heading     /* Heading font (Neon only) */
 ```
 
 ### Spacing and Radius
@@ -241,4 +241,4 @@ Theme preference is stored in localStorage under the key `arcane-theme-mode`. Th
 Code blocks use Highlight.js for syntax highlighting. Both stylesheets include theme-appropriate colors:
 
 - **ShadcnStylesheet**: GitHub-style highlighting (light in light mode, dark in dark mode)
-- **CodexStylesheet**: Neon terminal-style highlighting with primary color accents
+- **NeonStylesheet**: Neon terminal-style highlighting with primary color accents

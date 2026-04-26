@@ -7,11 +7,15 @@ import '../config/site_config.dart';
 class KBTopBar extends StatelessWidget {
   final SiteConfig config;
   final String currentPath;
+  final List<KBStylesheetOption> stylesheetOptions;
+  final String activeStylesheetId;
   final bool bottom;
 
   const KBTopBar({
     required this.config,
     required this.currentPath,
+    this.stylesheetOptions = const <KBStylesheetOption>[],
+    this.activeStylesheetId = '',
     this.bottom = false,
   });
 
@@ -36,15 +40,10 @@ class KBTopBar extends StatelessWidget {
                 src: _resolveLogoPath(config.logo!),
                 alt: '',
               ),
-            span(
-              classes: 'kb-topbar-brand-icon',
-              [
-                ArcaneIcon.book(size: IconSize.sm),
-              ],
-            ),
-            span(classes: 'kb-topbar-brand-label', [
-              Widget.text(config.name),
+            span(classes: 'kb-topbar-brand-icon', [
+              ArcaneIcon.book(size: IconSize.sm),
             ]),
+            span(classes: 'kb-topbar-brand-label', [Widget.text(config.name)]),
           ]),
           if (config.headerLinks.isNotEmpty)
             nav(classes: 'kb-topbar-nav', [
@@ -53,6 +52,8 @@ class KBTopBar extends StatelessWidget {
         ]),
         div(classes: 'kb-topbar-right', [
           if (config.searchEnabled) _buildSearch(),
+          if (config.stylesheetSwitcherEnabled && stylesheetOptions.length > 1)
+            _buildStylesheetSelect(),
           if (config.themeToggleEnabled)
             button(
               id: 'theme-toggle',
@@ -120,6 +121,28 @@ class KBTopBar extends StatelessWidget {
   <div id="search-results" class="search-results"></div>
 </div>
 ''');
+  }
+
+  Widget _buildStylesheetSelect() {
+    return Widget.element(
+      tag: 'select',
+      classes: 'kb-stylesheet-select',
+      attributes: const <String, String>{
+        'aria-label': 'Select stylesheet',
+        'data-kb-stylesheet-select': 'true',
+      },
+      children: [
+        for (KBStylesheetOption option in stylesheetOptions)
+          Widget.element(
+            tag: 'option',
+            attributes: <String, String>{
+              'value': option.id,
+              if (option.id == activeStylesheetId) 'selected': 'selected',
+            },
+            children: [Widget.text(option.label)],
+          ),
+      ],
+    );
   }
 
   bool _isActive(String href) {

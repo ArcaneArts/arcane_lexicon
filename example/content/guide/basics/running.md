@@ -11,10 +11,10 @@ date: 2025-01-11
 
 ```bash
 cd your-project
-jaspr serve
+dart ../tool/arcane_lexicon_demo.dart
 ```
 
-Visit http://localhost:8080
+Visit http://localhost:8081
 
 ## Production Build
 

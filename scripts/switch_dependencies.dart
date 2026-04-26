@@ -14,6 +14,7 @@
 /// - "remote" mode deletes the overrides file
 ///
 /// Configuration is defined in scripts/dependencies.yaml
+library;
 
 import 'dart:io';
 
@@ -24,10 +25,7 @@ class DependencyConfig {
   final String package;
   final String localPath;
 
-  DependencyConfig({
-    required this.package,
-    required this.localPath,
-  });
+  DependencyConfig({required this.package, required this.localPath});
 
   factory DependencyConfig.fromYaml(Map<dynamic, dynamic> yaml) {
     return DependencyConfig(
@@ -42,10 +40,7 @@ class PubspecTarget {
   final String path;
   final List<String> dependencies;
 
-  PubspecTarget({
-    required this.path,
-    required this.dependencies,
-  });
+  PubspecTarget({required this.path, required this.dependencies});
 
   factory PubspecTarget.fromYaml(Map<dynamic, dynamic> yaml) {
     return PubspecTarget(
@@ -65,8 +60,12 @@ void main(List<String> args) {
   if (args.isEmpty || !['local', 'remote'].contains(args[0])) {
     print('Usage: dart scripts/switch_dependencies.dart <local|remote>');
     print('');
-    print('  local   - Create pubspec_overrides.yaml with local path dependencies');
-    print('  remote  - Remove pubspec_overrides.yaml (use git deps from pubspec.yaml)');
+    print(
+      '  local   - Create pubspec_overrides.yaml with local path dependencies',
+    );
+    print(
+      '  remote  - Remove pubspec_overrides.yaml (use git deps from pubspec.yaml)',
+    );
     exit(1);
   }
 
@@ -89,9 +88,13 @@ void main(List<String> args) {
   final YamlMap config = loadYaml(configContent) as YamlMap;
 
   // Parse dependency configurations
-  final List<DependencyConfig> dependencies = (config['dependencies'] as YamlList)
-      .map((dynamic e) => DependencyConfig.fromYaml(e as Map<dynamic, dynamic>))
-      .toList();
+  final List<DependencyConfig> dependencies =
+      (config['dependencies'] as YamlList)
+          .map(
+            (dynamic e) =>
+                DependencyConfig.fromYaml(e as Map<dynamic, dynamic>),
+          )
+          .toList();
 
   // Parse pubspec targets
   final List<PubspecTarget> targets = (config['pubspec_files'] as YamlList)
@@ -145,10 +148,14 @@ void main(List<String> args) {
     print('');
   }
 
-  print('Done! Dependencies switched to ${useLocal ? "LOCAL" : "REMOTE"} mode.');
+  print(
+    'Done! Dependencies switched to ${useLocal ? "LOCAL" : "REMOTE"} mode.',
+  );
   if (useLocal) {
     print('');
     print('Note: pubspec_overrides.yaml files are gitignored.');
-    print('Run "dart scripts/switch_dependencies.dart remote" before committing.');
+    print(
+      'Run "dart scripts/switch_dependencies.dart remote" before committing.',
+    );
   }
 }

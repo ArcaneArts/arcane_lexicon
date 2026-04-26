@@ -79,7 +79,7 @@ KnowledgeBaseApp.create(
   config: config,
   stylesheet: const ShadcnStylesheet(theme: ShadcnTheme.midnight),
   // or
-  // stylesheet: const CodexStylesheet(theme: CodexTheme.blue),
+  // stylesheet: const NeonStylesheet(theme: NeonTheme.blue),
 )
 ```
 

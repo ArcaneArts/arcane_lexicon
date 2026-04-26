@@ -7,7 +7,17 @@ Transform markdown directories into documentation sites with Jaspr + Arcane styl
 ## Quick Start
 
 ```dart
+import 'package:arcane_jaspr_neon/arcane_jaspr_neon.dart';
+import 'package:arcane_jaspr_shadcn/arcane_jaspr_shadcn.dart';
 import 'package:arcane_lexicon/arcane_lexicon.dart' hide runApp;
+
+const ArcaneStylesheet shadcnStylesheet = ShadcnStylesheet(
+  theme: ShadcnTheme.charcoal,
+);
+const ArcaneStylesheet neonStylesheet = NeonStylesheet(
+  theme: NeonTheme.green,
+);
+const ArcaneStylesheet selectedStylesheet = shadcnStylesheet;
 
 void main() async {
   Jaspr.initializeApp(options: defaultServerOptions);
@@ -18,7 +28,7 @@ void main() async {
         name: 'My Docs',
         contentDirectory: 'content',
       ),
-      stylesheet: const ShadcnStylesheet(theme: ShadcnTheme.charcoal),
+      stylesheet: selectedStylesheet,
     ),
   );
 }
@@ -94,10 +104,12 @@ SiteConfig(
 ## Build
 
 ```bash
-jaspr serve
+dart tool/arcane_lexicon_demo.dart
 jaspr build
 jaspr build --define=BASE_URL=/docs
 ```
+
+The demo runner serves at `http://localhost:8081` and replaces any previous Arcane Lexicon demo process using that port.
 
 ## Package Docs Coverage
 

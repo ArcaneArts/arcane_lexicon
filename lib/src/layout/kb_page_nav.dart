@@ -1,10 +1,10 @@
 import 'package:arcane_jaspr/arcane_jaspr.dart';
 import 'package:arcane_jaspr/html.dart' show ArcaneDiv, ArcaneLink;
-
-import '../config/site_config.dart';
-import '../navigation/nav_item.dart';
-import '../navigation/nav_section.dart';
-import '../navigation/nav_builder.dart';
+import 'package:arcane_lexicon/src/config/site_config.dart';
+import 'package:arcane_lexicon/src/icons/kb_icon.dart';
+import 'package:arcane_lexicon/src/navigation/nav_builder.dart';
+import 'package:arcane_lexicon/src/navigation/nav_item.dart';
+import 'package:arcane_lexicon/src/navigation/nav_section.dart';
 
 /// Navigation item with title and path for prev/next links.
 class PageNavLink {
@@ -87,7 +87,7 @@ class KBPageNav extends StatelessWidget {
                   gapSize: Gap.xs,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    ArcaneIcon.arrowLeft(size: IconSize.sm),
+                    KBIcon.build('arrow-left', size: IconSize.sm),
                     const ArcaneDiv(
                       styles: ArcaneStyleData(
                         fontSize: FontSize.sm,
@@ -146,7 +146,7 @@ class KBPageNav extends StatelessWidget {
                       ),
                       children: [Text('Next')],
                     ),
-                    ArcaneIcon.arrowRight(size: IconSize.sm),
+                    KBIcon.build('arrow-right', size: IconSize.sm),
                   ],
                 ),
                 ArcaneDiv(
@@ -270,7 +270,7 @@ class KBSubpages extends StatelessWidget {
                         styles: const ArcaneStyleData(
                           textColor: TextColor.primary,
                         ),
-                        children: [_buildIcon(item.icon!)],
+                        children: [KBIcon.build(item.icon!, size: IconSize.md)],
                       ),
                     ArcaneDiv(
                       styles: const ArcaneStyleData(flex: FlexPreset.expand),
@@ -296,7 +296,9 @@ class KBSubpages extends StatelessWidget {
                       styles: const ArcaneStyleData(
                         textColor: TextColor.mutedForeground,
                       ),
-                      children: [ArcaneIcon.arrowRight(size: IconSize.sm)],
+                      children: [
+                        KBIcon.build('arrow-right', size: IconSize.sm),
+                      ],
                     ),
                   ],
                 ),
@@ -326,7 +328,9 @@ class KBSubpages extends StatelessWidget {
                         styles: const ArcaneStyleData(
                           textColor: TextColor.primary,
                         ),
-                        children: [_buildIcon(section.icon!)],
+                        children: [
+                          KBIcon.build(section.icon!, size: IconSize.md),
+                        ],
                       ),
                     ArcaneDiv(
                       styles: const ArcaneStyleData(flex: FlexPreset.expand),
@@ -343,9 +347,7 @@ class KBSubpages extends StatelessWidget {
                             fontSize: FontSize.sm,
                             textColor: TextColor.mutedForeground,
                           ),
-                          children: [
-                            Text('${section.items.length} pages'),
-                          ],
+                          children: [Text('${section.items.length} pages')],
                         ),
                       ],
                     ),
@@ -353,7 +355,9 @@ class KBSubpages extends StatelessWidget {
                       styles: const ArcaneStyleData(
                         textColor: TextColor.mutedForeground,
                       ),
-                      children: [ArcaneIcon.chevronRight(size: IconSize.sm)],
+                      children: [
+                        KBIcon.build('chevron-right', size: IconSize.sm),
+                      ],
                     ),
                   ],
                 ),
@@ -376,26 +380,5 @@ class KBSubpages extends StatelessWidget {
       if (found != null) return found;
     }
     return null;
-  }
-
-  Widget _buildIcon(String iconName) {
-    return switch (iconName) {
-      'rocket' => ArcaneIcon.rocket(size: IconSize.md),
-      'server' => ArcaneIcon.server(size: IconSize.md),
-      'database' => ArcaneIcon.database(size: IconSize.md),
-      'shield' => ArcaneIcon.shield(size: IconSize.md),
-      'code' => ArcaneIcon.code(size: IconSize.md),
-      'terminal' => ArcaneIcon.terminal(size: IconSize.md),
-      'settings' => ArcaneIcon.settings(size: IconSize.md),
-      'book' => ArcaneIcon.book(size: IconSize.md),
-      'file-text' => ArcaneIcon.fileText(size: IconSize.md),
-      'folder' => ArcaneIcon.folder(size: IconSize.md),
-      'sliders' => ArcaneIcon.slidersHorizontal(size: IconSize.md),
-      'component' => ArcaneIcon.blocks(size: IconSize.md),
-      'lightbulb' => ArcaneIcon.lightbulb(size: IconSize.md),
-      'palette' => ArcaneIcon.palette(size: IconSize.md),
-      'life-buoy' => ArcaneIcon.lifeBuoy(size: IconSize.md),
-      _ => ArcaneIcon.fileText(size: IconSize.md),
-    };
   }
 }

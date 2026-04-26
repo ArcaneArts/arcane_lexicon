@@ -269,6 +269,54 @@ The following components are registered by default through `KBRichMarkdownCompon
 <Icon name="palette" size="sm" />
 <Icon name="lightbulb" size="sm" />
 
+#### Kbd
+
+```markdown
+Press <Kbd>⌘</Kbd> + <Kbd>K</Kbd> to focus search.
+```
+
+Press <Kbd>⌘</Kbd> + <Kbd>K</Kbd> to focus search.
+
+#### FilePath
+
+```markdown
+Edit <FilePath>content/reference/components.md</FilePath> before rebuilding.
+```
+
+Edit <FilePath>content/reference/components.md</FilePath> before rebuilding.
+
+#### Endpoint
+
+```markdown
+<Endpoint method="GET" path="/api/docs/search-index.json" />
+<Endpoint method="POST" path="/api/feedback/rating" />
+```
+
+<Endpoint method="GET" path="/api/docs/search-index.json" />
+<Endpoint method="POST" path="/api/feedback/rating" />
+
+#### ResourceGrid + Resource
+
+```markdown
+<ResourceGrid cols={2}>
+  <Resource title="Authoring Guide" href="/guide/basics/configuration" icon="book-open" label="Guide">
+    Frontmatter, section config, and site config basics.
+  </Resource>
+  <Resource title="Sitemap Utility" href="/guide/advanced/sitemap" icon="globe" label="SEO">
+    Build sitemap XML for production docs deployments.
+  </Resource>
+</ResourceGrid>
+```
+
+<ResourceGrid cols={2}>
+  <Resource title="Authoring Guide" href="/guide/basics/configuration" icon="book-open" label="Guide">
+    Frontmatter, section config, and site config basics.
+  </Resource>
+  <Resource title="Sitemap Utility" href="/guide/advanced/sitemap" icon="globe" label="SEO">
+    Build sitemap XML for production docs deployments.
+  </Resource>
+</ResourceGrid>
+
 #### CodeGroup
 
 ````markdown

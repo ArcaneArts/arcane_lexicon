@@ -45,8 +45,8 @@ ServerOptions get defaultServerOptions => ServerOptions(
     ..._infinite_carousel.ArcaneInfiniteCarousel.styles,
     ..._field.ArcaneFieldStyles.styles,
     ..._avatar.ArcaneAvatarBadge.styles,
-    ..._tab_bar.TabBar.styles,
     ..._tabs.Tabs.styles,
+    ..._tab_bar.TabBar.styles,
   ],
 );
 

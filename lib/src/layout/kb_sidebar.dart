@@ -1,14 +1,14 @@
 import 'package:arcane_jaspr/arcane_jaspr.dart';
 import 'package:arcane_jaspr/web.dart'
     show RawText, Styles, a, button, div, img, nav, span;
-
-import '../config/site_config.dart';
-import '../navigation/nav_item.dart';
-import '../navigation/nav_section.dart';
-import '../navigation/nav_builder.dart';
+import 'package:arcane_lexicon/src/config/site_config.dart';
+import 'package:arcane_lexicon/src/icons/kb_icon.dart';
+import 'package:arcane_lexicon/src/navigation/nav_builder.dart';
+import 'package:arcane_lexicon/src/navigation/nav_item.dart';
+import 'package:arcane_lexicon/src/navigation/nav_section.dart';
 
 /// The sidebar navigation component for knowledge base pages.
-/// Matches the arcane_jaspr_codex pattern.
+/// Matches the arcane_jaspr_neon pattern.
 class KBSidebar extends StatelessWidget {
   final SiteConfig config;
   final NavManifest manifest;
@@ -16,6 +16,8 @@ class KBSidebar extends StatelessWidget {
   final bool showBranding;
   final bool showSearch;
   final bool showThemeToggle;
+  final List<KBStylesheetOption> stylesheetOptions;
+  final String activeStylesheetId;
   final String railTopOffset;
 
   const KBSidebar({
@@ -25,12 +27,17 @@ class KBSidebar extends StatelessWidget {
     this.showBranding = true,
     this.showSearch = true,
     this.showThemeToggle = true,
+    this.stylesheetOptions = const <KBStylesheetOption>[],
+    this.activeStylesheetId = '',
     this.railTopOffset = '0px',
   });
 
   @override
   Widget build(BuildContext context) {
-    bool showHeader = showBranding || showSearch || showThemeToggle;
+    bool showStylesheetSwitcher =
+        config.stylesheetSwitcherEnabled && stylesheetOptions.length > 1;
+    bool showHeader =
+        showBranding || showSearch || showThemeToggle || showStylesheetSwitcher;
 
     return div(classes: 'kb-sidebar', [
       ArcaneScrollRail(
@@ -55,7 +62,7 @@ class KBSidebar extends StatelessWidget {
               if (manifest.visibleItems.isNotEmpty)
                 _buildFixedSection(
                   'Pages',
-                  ArcaneIcon.fileText(size: IconSize.sm),
+                  KBIcon.build('file-text', classes: 'sidebar-icon'),
                   manifest.visibleItems
                       .map((NavItem item) => _buildNavItem(item))
                       .toList(),
@@ -72,6 +79,8 @@ class KBSidebar extends StatelessWidget {
   /// Build the sidebar header with branding and controls
   Widget _buildHeader() {
     List<Widget> children = <Widget>[];
+    bool showStylesheetSwitcher =
+        config.stylesheetSwitcherEnabled && stylesheetOptions.length > 1;
 
     if (showBranding) {
       children.add(
@@ -80,9 +89,7 @@ class KBSidebar extends StatelessWidget {
             href: config.fullPath('/'),
             styles: const Styles(raw: {'text-decoration': 'none'}),
             [
-              div(classes: 'sidebar-brand-title', [
-                Widget.text(config.name),
-              ]),
+              div(classes: 'sidebar-brand-title', [Widget.text(config.name)]),
               if (config.description != null)
                 div(classes: 'sidebar-brand-subtitle', [
                   Widget.text(config.description!),
@@ -93,7 +100,7 @@ class KBSidebar extends StatelessWidget {
       );
     }
 
-    bool hasControls = showSearch || showThemeToggle;
+    bool hasControls = showSearch || showThemeToggle || showStylesheetSwitcher;
     if (hasControls) {
       children.add(
         div(classes: 'sidebar-controls', [
@@ -109,6 +116,7 @@ class KBSidebar extends StatelessWidget {
   <div id="search-results" class="search-results"></div>
 </div>
 '''),
+          if (showStylesheetSwitcher) _buildStylesheetSelect(),
           if (showThemeToggle)
             button(
               id: 'theme-toggle',
@@ -119,10 +127,10 @@ class KBSidebar extends StatelessWidget {
               },
               [
                 span(classes: 'theme-icon-light', [
-                  ArcaneIcon.sun(size: IconSize.sm),
+                  KBIcon.build('sun', size: IconSize.sm),
                 ]),
                 span(classes: 'theme-icon-dark', [
-                  ArcaneIcon.moon(size: IconSize.sm),
+                  KBIcon.build('moon', size: IconSize.sm),
                 ]),
               ],
             ),
@@ -133,12 +141,30 @@ class KBSidebar extends StatelessWidget {
     return div(classes: 'sidebar-header', children);
   }
 
+  Widget _buildStylesheetSelect() {
+    return Widget.element(
+      tag: 'select',
+      classes: 'kb-stylesheet-select',
+      attributes: const <String, String>{
+        'aria-label': 'Select stylesheet',
+        'data-kb-stylesheet-select': 'true',
+      },
+      children: [
+        for (KBStylesheetOption option in stylesheetOptions)
+          Widget.element(
+            tag: 'option',
+            attributes: <String, String>{
+              'value': option.id,
+              if (option.id == activeStylesheetId) 'selected': 'selected',
+            },
+            children: [Widget.text(option.label)],
+          ),
+      ],
+    );
+  }
+
   /// Build a fixed section that's always expanded (no toggle)
-  Widget _buildFixedSection(
-    String title,
-    Widget icon,
-    List<Widget> items,
-  ) {
+  Widget _buildFixedSection(String title, Widget icon, List<Widget> items) {
     return div(classes: 'sidebar-section', [
       // Section header
       div(classes: 'sidebar-section-header', [
@@ -169,7 +195,7 @@ class KBSidebar extends StatelessWidget {
               if (section.icon != null) _buildIcon(section.icon!),
               span([Widget.text(section.title)]),
               span(classes: 'sidebar-chevron', [
-                ArcaneIcon.chevronDown(size: IconSize.sm),
+                KBIcon.build('chevron-down', classes: 'sidebar-chevron-icon'),
               ]),
             ],
           ),
@@ -223,7 +249,6 @@ class KBSidebar extends StatelessWidget {
   /// - SVG file URL: `/icons/my-icon.svg` or `https://example.com/icon.svg`
   /// - Lucide icon name: `rocket`, `file-text`, etc.
   Widget _buildIcon(String iconName) {
-    // Raw SVG markup
     if (iconName.trimLeft().startsWith('<svg')) {
       return span(
         classes: 'sidebar-icon sidebar-icon-svg',
@@ -240,7 +265,6 @@ class KBSidebar extends StatelessWidget {
       );
     }
 
-    // SVG file URL
     if (iconName.endsWith('.svg')) {
       return img(
         classes: 'sidebar-icon sidebar-icon-svg',
@@ -250,180 +274,7 @@ class KBSidebar extends StatelessWidget {
       );
     }
 
-    // Lucide icon name (default)
-    return _buildLucideIcon(iconName);
-  }
-
-  /// Map Lucide icon name strings to ArcaneIcon components.
-  Widget _buildLucideIcon(String iconName) {
-    return switch (iconName) {
-      // Documents & Files
-      'file-text' => ArcaneIcon.fileText(size: IconSize.sm),
-      'file' => ArcaneIcon.file(size: IconSize.sm),
-      'book' => ArcaneIcon.book(size: IconSize.sm),
-      'book-open' => ArcaneIcon.bookOpen(size: IconSize.sm),
-      'notebook' => ArcaneIcon.notebook(size: IconSize.sm),
-      'scroll' => ArcaneIcon.scroll(size: IconSize.sm),
-
-      // Navigation & Actions
-      'rocket' => ArcaneIcon.rocket(size: IconSize.sm),
-      'zap' => ArcaneIcon.zap(size: IconSize.sm),
-      'home' => ArcaneIcon.home(size: IconSize.sm),
-      'play' => ArcaneIcon.play(size: IconSize.sm),
-      'compass' => ArcaneIcon.compass(size: IconSize.sm),
-      'map' => ArcaneIcon.map(size: IconSize.sm),
-      'navigation' => ArcaneIcon.navigation(size: IconSize.sm),
-
-      // Server & Infrastructure
-      'server' => ArcaneIcon.server(size: IconSize.sm),
-      'database' => ArcaneIcon.database(size: IconSize.sm),
-      'hard-drive' => ArcaneIcon.hardDrive(size: IconSize.sm),
-      'cpu' => ArcaneIcon.cpu(size: IconSize.sm),
-      'cloud' => ArcaneIcon.cloud(size: IconSize.sm),
-      'globe' => ArcaneIcon.globe(size: IconSize.sm),
-      'network' => ArcaneIcon.network(size: IconSize.sm),
-      'wifi' => ArcaneIcon.wifi(size: IconSize.sm),
-      'monitor' => ArcaneIcon.monitor(size: IconSize.sm),
-      'laptop' => ArcaneIcon.laptop(size: IconSize.sm),
-      'container' => ArcaneIcon.container(size: IconSize.sm),
-
-      // Security
-      'shield' => ArcaneIcon.shield(size: IconSize.sm),
-      'shield-check' => ArcaneIcon.shieldCheck(size: IconSize.sm),
-      'shield-alert' => ArcaneIcon.shieldAlert(size: IconSize.sm),
-      'lock' => ArcaneIcon.lock(size: IconSize.sm),
-      'unlock' => ArcaneIcon.unlock(size: IconSize.sm),
-      'key' => ArcaneIcon.key(size: IconSize.sm),
-      'key-round' => ArcaneIcon.keyRound(size: IconSize.sm),
-      'scan' => ArcaneIcon.scan(size: IconSize.sm),
-
-      // Settings & Tools
-      'settings' => ArcaneIcon.settings(size: IconSize.sm),
-      'settings-2' => ArcaneIcon.settings2(size: IconSize.sm),
-      'sliders' => ArcaneIcon.slidersHorizontal(size: IconSize.sm),
-      'sliders-horizontal' => ArcaneIcon.slidersHorizontal(size: IconSize.sm),
-      'wrench' => ArcaneIcon.wrench(size: IconSize.sm),
-      'hammer' => ArcaneIcon.hammer(size: IconSize.sm),
-      'terminal' => ArcaneIcon.terminal(size: IconSize.sm),
-      'code' => ArcaneIcon.code(size: IconSize.sm),
-      'braces' => ArcaneIcon.braces(size: IconSize.sm),
-      'brackets' => ArcaneIcon.brackets(size: IconSize.sm),
-      'component' => ArcaneIcon.blocks(size: IconSize.sm),
-      'lightbulb' => ArcaneIcon.lightbulb(size: IconSize.sm),
-      'palette' => ArcaneIcon.palette(size: IconSize.sm),
-
-      // Files & Folders
-      'folder' => ArcaneIcon.folder(size: IconSize.sm),
-      'folder-open' => ArcaneIcon.folderOpen(size: IconSize.sm),
-      'folder-closed' => ArcaneIcon.folderClosed(size: IconSize.sm),
-      'archive' => ArcaneIcon.archive(size: IconSize.sm),
-      'package' => ArcaneIcon.package(size: IconSize.sm),
-      'box' => ArcaneIcon.box(size: IconSize.sm),
-
-      // Communication
-      'mail' => ArcaneIcon.mail(size: IconSize.sm),
-      'message-circle' => ArcaneIcon.messageCircle(size: IconSize.sm),
-      'message-square' => ArcaneIcon.messageSquare(size: IconSize.sm),
-      'headphones' => ArcaneIcon.headphones(size: IconSize.sm),
-      'phone' => ArcaneIcon.phone(size: IconSize.sm),
-      'bell' => ArcaneIcon.bell(size: IconSize.sm),
-
-      // Status & Monitoring
-      'activity' => ArcaneIcon.activity(size: IconSize.sm),
-      'bar-chart' => ArcaneIcon.chartBar(size: IconSize.sm),
-      'line-chart' => ArcaneIcon.chartLine(size: IconSize.sm),
-      'pie-chart' => ArcaneIcon.chartPie(size: IconSize.sm),
-      'gauge' => ArcaneIcon.gauge(size: IconSize.sm),
-      'clock' => ArcaneIcon.clock(size: IconSize.sm),
-      'timer' => ArcaneIcon.timer(size: IconSize.sm),
-      'refresh-cw' => ArcaneIcon.refreshCw(size: IconSize.sm),
-      'rotate-cw' => ArcaneIcon.rotateCw(size: IconSize.sm),
-      'loader' => ArcaneIcon.loader(size: IconSize.sm),
-
-      // Money & Billing
-      'credit-card' => ArcaneIcon.creditCard(size: IconSize.sm),
-      'dollar-sign' => ArcaneIcon.dollarSign(size: IconSize.sm),
-      'receipt' => ArcaneIcon.receipt(size: IconSize.sm),
-      'wallet' => ArcaneIcon.wallet(size: IconSize.sm),
-      'coins' => ArcaneIcon.coins(size: IconSize.sm),
-      'banknote' => ArcaneIcon.banknote(size: IconSize.sm),
-
-      // Users
-      'user' => ArcaneIcon.user(size: IconSize.sm),
-      'users' => ArcaneIcon.users(size: IconSize.sm),
-      'user-plus' => ArcaneIcon.userPlus(size: IconSize.sm),
-      'user-check' => ArcaneIcon.userCheck(size: IconSize.sm),
-      'user-cog' => ArcaneIcon.userCog(size: IconSize.sm),
-
-      // Misc
-      'layers' => ArcaneIcon.layers(size: IconSize.sm),
-      'layout' => ArcaneIcon.layoutGrid(size: IconSize.sm),
-      'grid' => ArcaneIcon.grid3x3(size: IconSize.sm),
-      'sparkles' => ArcaneIcon.sparkles(size: IconSize.sm),
-      'star' => ArcaneIcon.star(size: IconSize.sm),
-      'heart' => ArcaneIcon.heart(size: IconSize.sm),
-      'flag' => ArcaneIcon.flag(size: IconSize.sm),
-      'bookmark' => ArcaneIcon.bookmark(size: IconSize.sm),
-      'tag' => ArcaneIcon.tag(size: IconSize.sm),
-      'tags' => ArcaneIcon.tags(size: IconSize.sm),
-      'info' => ArcaneIcon.info(size: IconSize.sm),
-
-      // Alerts & Info
-      'alert-triangle' => ArcaneIcon.triangleAlert(size: IconSize.sm),
-      'alert-circle' => ArcaneIcon.circleAlert(size: IconSize.sm),
-      'help-circle' => ArcaneIcon.help(size: IconSize.sm),
-      'check' => ArcaneIcon.check(size: IconSize.sm),
-      'check-circle' => ArcaneIcon.circleCheck(size: IconSize.sm),
-      'x' => ArcaneIcon.x(size: IconSize.sm),
-      'x-circle' => ArcaneIcon.circleX(size: IconSize.sm),
-
-      // Arrows
-      'arrow-right' => ArcaneIcon.arrowRight(size: IconSize.sm),
-      'arrow-left' => ArcaneIcon.arrowLeft(size: IconSize.sm),
-      'arrow-up' => ArcaneIcon.arrowUp(size: IconSize.sm),
-      'arrow-down' => ArcaneIcon.arrowDown(size: IconSize.sm),
-      'chevron-right' => ArcaneIcon.chevronRight(size: IconSize.sm),
-      'chevron-left' => ArcaneIcon.chevronLeft(size: IconSize.sm),
-      'chevron-up' => ArcaneIcon.chevronUp(size: IconSize.sm),
-      'chevron-down' => ArcaneIcon.chevronDown(size: IconSize.sm),
-      'external-link' => ArcaneIcon.externalLink(size: IconSize.sm),
-      'link' => ArcaneIcon.link(size: IconSize.sm),
-
-      // Actions
-      'download' => ArcaneIcon.download(size: IconSize.sm),
-      'upload' => ArcaneIcon.upload(size: IconSize.sm),
-      'copy' => ArcaneIcon.copy(size: IconSize.sm),
-      'clipboard' => ArcaneIcon.clipboard(size: IconSize.sm),
-      'trash' => ArcaneIcon.trash(size: IconSize.sm),
-      'trash-2' => ArcaneIcon.trash2(size: IconSize.sm),
-      'edit' => ArcaneIcon.edit(size: IconSize.sm),
-      'pencil' => ArcaneIcon.pencil(size: IconSize.sm),
-      'save' => ArcaneIcon.save(size: IconSize.sm),
-      'plus' => ArcaneIcon.plus(size: IconSize.sm),
-      'minus' => ArcaneIcon.minus(size: IconSize.sm),
-      'search' => ArcaneIcon.search(size: IconSize.sm),
-      'filter' => ArcaneIcon.filter(size: IconSize.sm),
-      'eye' => ArcaneIcon.eye(size: IconSize.sm),
-      'eye-off' => ArcaneIcon.eyeOff(size: IconSize.sm),
-
-      // Support & Help
-      'life-buoy' => ArcaneIcon.lifeBuoy(size: IconSize.sm),
-      'help' => ArcaneIcon.help(size: IconSize.sm),
-
-      // Power & Control
-      'power' => ArcaneIcon.power(size: IconSize.sm),
-      'plug' => ArcaneIcon.plug(size: IconSize.sm),
-      'plug-zap' => ArcaneIcon.plugZap(size: IconSize.sm),
-      'battery' => ArcaneIcon.battery(size: IconSize.sm),
-
-      // World & Location
-      'map-pin' => ArcaneIcon.mapPin(size: IconSize.sm),
-      'building' => ArcaneIcon.building(size: IconSize.sm),
-      'building-2' => ArcaneIcon.building2(size: IconSize.sm),
-
-      // Default fallback
-      _ => ArcaneIcon.fileText(size: IconSize.sm),
-    };
+    return KBIcon.build(iconName, classes: 'sidebar-icon');
   }
 
   bool _isActive(String path) {

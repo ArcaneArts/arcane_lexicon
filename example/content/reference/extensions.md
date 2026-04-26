@@ -48,7 +48,7 @@ Supported media types:
 
 ## CalloutExtension
 
-Transforms GitHub-style callouts into rich callout tags.
+Transforms GitHub-style callouts into GitHub alert markup and preserves rich callout tags as Arcane component callouts.
 
 ```markdown
 > [!NOTE]
@@ -156,4 +156,3 @@ Common classes are normalized for:
 - `json`
 - `html`
 - `css`
-

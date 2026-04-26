@@ -5,6 +5,7 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "lib/generated/assets.dart"
+    - "example/lib/generated/assets.dart"
   language:
     strict-casts: true
     strict-inference: true
@@ -19,8 +20,5 @@ linter:
     - prefer_const_constructors
     - prefer_const_declarations
     - prefer_final_fields
-    - prefer_final_locals
-    - sort_constructors_first
-    - sort_unnamed_constructors_first
     - unawaited_futures
     - unnecessary_await_in_return

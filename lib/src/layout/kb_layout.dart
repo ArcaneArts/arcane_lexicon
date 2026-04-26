@@ -1,7 +1,7 @@
 import 'package:arcane_jaspr/arcane_jaspr.dart';
 import 'package:arcane_jaspr/html.dart' show ArcaneDiv;
-import 'package:arcane_jaspr/web.dart'
-    show RawText, div, link, meta, script;
+import 'package:arcane_jaspr/web.dart' show RawText, div, link, meta, script;
+import 'package:arcane_lexicon/src/components/kb_tag_chips.dart';
 import 'package:jaspr_content/jaspr_content.dart';
 
 import '../config/site_config.dart';
@@ -22,11 +22,12 @@ import 'kb_top_bar.dart';
 typedef DemoBuilder = Widget? Function(String componentType);
 
 /// The main layout wrapper for knowledge base pages.
-/// Matches the arcane_jaspr_codex pattern with single-line theming.
+/// Matches the arcane_jaspr_neon pattern with single-line theming.
 class KBLayout extends PageLayoutBase {
   final SiteConfig config;
   final NavManifest manifest;
   final ArcaneStylesheet stylesheet;
+  final List<KBStylesheetOption> stylesheetOptions;
   final KBScripts scripts;
   final DemoBuilder? demoBuilder;
 
@@ -34,9 +35,15 @@ class KBLayout extends PageLayoutBase {
     required this.config,
     required this.manifest,
     required this.stylesheet,
+    this.stylesheetOptions = const <KBStylesheetOption>[],
     KBScripts? scripts,
     this.demoBuilder,
-  }) : scripts = scripts ?? KBScripts(basePath: config.baseUrl);
+  }) : scripts =
+           scripts ??
+           KBScripts(
+             basePath: config.baseUrl,
+             stylesheetOptions: stylesheetOptions,
+           );
 
   @override
   Pattern get name => 'kb';
@@ -47,14 +54,9 @@ class KBLayout extends PageLayoutBase {
 
     final Map<String, dynamic> pageData = page.data.page;
     final String assetPrefix = config.assetPrefix;
-    String rewrittenBaseCss = _rewriteAssetUrls(
-      stylesheet.baseCss,
-      assetPrefix,
-    );
-    String rewrittenWidgetCss = _rewriteAssetUrls(
-      stylesheet.componentCss,
-      assetPrefix,
-    );
+    List<KBStylesheetOption> effectiveStylesheetOptions =
+        _effectiveStylesheetOptions();
+    String activeStylesheetId = _activeStylesheetId(effectiveStylesheetOptions);
 
     // Title
     final String title = pageData['title'] as String? ?? config.name;
@@ -96,12 +98,33 @@ class KBLayout extends PageLayoutBase {
       attributes: const {'sizes': '16x16'},
     );
 
-    // Inject stylesheet base CSS (contains all CSS variables and base styles)
-    yield Widget.element(
-      tag: 'style',
-      attributes: const {'id': 'arcane-theme-vars'},
-      children: [RawText(rewrittenBaseCss)],
-    );
+    if (stylesheetOptions.isEmpty) {
+      String rewrittenBaseCss = _rewriteAssetUrls(
+        stylesheet.baseCss,
+        assetPrefix,
+      );
+      yield Widget.element(
+        tag: 'style',
+        attributes: const {'id': 'arcane-theme-vars'},
+        children: [RawText(rewrittenBaseCss)],
+      );
+    } else {
+      for (KBStylesheetOption option in effectiveStylesheetOptions) {
+        String rewrittenBaseCss = _rewriteAssetUrls(
+          option.stylesheet.baseCss,
+          assetPrefix,
+        );
+        yield Widget.element(
+          tag: 'style',
+          attributes: <String, String>{
+            'id': 'arcane-theme-vars-${option.id}',
+            'data-kb-stylesheet-id': option.id,
+            'media': option.id == activeStylesheetId ? 'all' : 'not all',
+          },
+          children: [RawText(rewrittenBaseCss)],
+        );
+      }
+    }
 
     // Inject default KB component styles (base structural styles)
     // Injected BEFORE componentCss so stylesheet overrides can take precedence
@@ -111,23 +134,44 @@ class KBLayout extends PageLayoutBase {
       children: [RawText(KBStyles.generate())],
     );
 
-    // Inject stylesheet component CSS (contains sidebar styles, tree lines, etc.)
-    // Comes after KB styles so stylesheet-specific overrides (like Codex) take precedence
-    yield Widget.element(
-      tag: 'style',
-      attributes: const {'id': 'arcane-component-styles'},
-      children: [RawText(rewrittenWidgetCss)],
-    );
+    if (stylesheetOptions.isEmpty) {
+      String rewrittenWidgetCss = _rewriteAssetUrls(
+        stylesheet.componentCss,
+        assetPrefix,
+      );
+      yield Widget.element(
+        tag: 'style',
+        attributes: const {'id': 'arcane-component-styles'},
+        children: [RawText(rewrittenWidgetCss)],
+      );
+    } else {
+      for (KBStylesheetOption option in effectiveStylesheetOptions) {
+        String rewrittenWidgetCss = _rewriteAssetUrls(
+          option.stylesheet.componentCss,
+          assetPrefix,
+        );
+        yield Widget.element(
+          tag: 'style',
+          attributes: <String, String>{
+            'id': 'arcane-component-styles-${option.id}',
+            'data-kb-stylesheet-id': option.id,
+            'media': option.id == activeStylesheetId ? 'all' : 'not all',
+          },
+          children: [RawText(rewrittenWidgetCss)],
+        );
+      }
+    }
 
     // Load external CSS (Google Fonts, etc.)
-    if (stylesheet.externalCssUrls.isNotEmpty) {
+    List<String> externalCssUrls = _externalCssUrls(effectiveStylesheetOptions);
+    if (externalCssUrls.isNotEmpty) {
       yield const link(rel: 'preconnect', href: 'https://fonts.googleapis.com');
       yield const link(
         rel: 'preconnect',
         href: 'https://fonts.gstatic.com',
         attributes: {'crossorigin': ''},
       );
-      for (final String url in stylesheet.externalCssUrls) {
+      for (String url in externalCssUrls) {
         yield link(rel: 'stylesheet', href: url);
       }
     }
@@ -198,6 +242,7 @@ class KBLayout extends PageLayoutBase {
       config: config,
       manifest: manifest,
       stylesheet: stylesheet,
+      stylesheetOptions: stylesheetOptions,
       scripts: scripts,
       currentPath: page.url,
       title: pageData['title'] as String?,
@@ -217,6 +262,40 @@ class KBLayout extends PageLayoutBase {
 
   String _rewriteAssetUrls(String css, String assetPrefix) {
     return KBLayout.rewriteAssetUrlsForBasePath(css, assetPrefix);
+  }
+
+  List<KBStylesheetOption> _effectiveStylesheetOptions() {
+    if (stylesheetOptions.isNotEmpty) {
+      return stylesheetOptions;
+    }
+    return <KBStylesheetOption>[
+      KBStylesheetOption(
+        id: 'default',
+        label: 'Default',
+        stylesheet: stylesheet,
+      ),
+    ];
+  }
+
+  String _activeStylesheetId(List<KBStylesheetOption> options) {
+    for (KBStylesheetOption option in options) {
+      if (identical(option.stylesheet, stylesheet)) {
+        return option.id;
+      }
+    }
+    return options.first.id;
+  }
+
+  List<String> _externalCssUrls(List<KBStylesheetOption> options) {
+    List<String> urls = <String>[];
+    for (KBStylesheetOption option in options) {
+      for (String url in option.stylesheet.externalCssUrls) {
+        if (!urls.contains(url)) {
+          urls.add(url);
+        }
+      }
+    }
+    return urls;
   }
 
   static String rewriteAssetUrlsForBasePath(String css, String assetPrefix) {
@@ -333,6 +412,7 @@ class ThemedKBPage extends StatefulWidget {
   final SiteConfig config;
   final NavManifest manifest;
   final ArcaneStylesheet stylesheet;
+  final List<KBStylesheetOption> stylesheetOptions;
   final KBScripts scripts;
   final String currentPath;
   final String? title;
@@ -352,6 +432,7 @@ class ThemedKBPage extends StatefulWidget {
     required this.config,
     required this.manifest,
     required this.stylesheet,
+    this.stylesheetOptions = const <KBStylesheetOption>[],
     required this.scripts,
     required this.currentPath,
     this.title,
@@ -386,8 +467,12 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
     // Dark mode uses .dark class (defined in stylesheet baseCss)
     final String themeClass = _isDark ? 'dark' : '';
     final String? stylesheetClass = component.stylesheet.bodyClass;
+    final String? stylesheetOptionClass = component.stylesheetOptions.isEmpty
+        ? null
+        : 'kb-style-${_activeStylesheetId()}';
     final String rootClasses = [
       themeClass,
+      stylesheetOptionClass,
       stylesheetClass,
     ].where((String? c) => c != null && c.isNotEmpty).join(' ');
 
@@ -418,48 +503,50 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
     String sidebarTopOffset = showNavigationBar && useTopPosition
         ? '56px'
         : '0px';
+    String activeStylesheetId = component.stylesheetOptions.isEmpty
+        ? ''
+        : _activeStylesheetId();
 
     return ArcaneDiv(
       classes: 'kb-page-shell',
-      styles: const ArcaneStyleData(
-        display: Display.flex,
-        flexDirection: FlexDirection.column,
-        minHeight: '100vh',
-      ),
+      styles: const ArcaneStyleData(minHeight: '100vh'),
       children: [
-        if (showNavigationBar && useTopPosition)
-          KBTopBar(
+        ArcaneScaffold(
+          title: showNavigationBar && useTopPosition
+              ? null
+              : component.config.name,
+          navigation: showNavigationBar && useTopPosition
+              ? KBTopBar(
+                  config: component.config,
+                  currentPath: component.currentPath,
+                  stylesheetOptions: component.stylesheetOptions,
+                  activeStylesheetId: activeStylesheetId,
+                  bottom: false,
+                )
+              : null,
+          sidebar: KBSidebar(
             config: component.config,
+            manifest: component.manifest,
             currentPath: component.currentPath,
-            bottom: false,
+            showBranding: showSidebarControls,
+            showSearch: showSidebarControls && component.config.searchEnabled,
+            showThemeToggle:
+                showSidebarControls && component.config.themeToggleEnabled,
+            stylesheetOptions: component.stylesheetOptions,
+            activeStylesheetId: activeStylesheetId,
+            railTopOffset: sidebarTopOffset,
           ),
-        ArcaneDiv(
-          classes: 'kb-layout-body',
-          styles: const ArcaneStyleData(
-            display: Display.flex,
-            flexGrow: 1,
-            minHeight: '0',
-          ),
-          children: [
-            KBSidebar(
-              config: component.config,
-              manifest: component.manifest,
-              currentPath: component.currentPath,
-              showBranding: showSidebarControls,
-              showSearch: showSidebarControls && component.config.searchEnabled,
-              showThemeToggle:
-                  showSidebarControls && component.config.themeToggleEnabled,
-              railTopOffset: sidebarTopOffset,
-            ),
-            _buildMainArea(),
-          ],
+          body: _buildMainArea(),
+          footer: showNavigationBar && !useTopPosition
+              ? KBTopBar(
+                  config: component.config,
+                  currentPath: component.currentPath,
+                  stylesheetOptions: component.stylesheetOptions,
+                  activeStylesheetId: activeStylesheetId,
+                  bottom: true,
+                )
+              : null,
         ),
-        if (showNavigationBar && !useTopPosition)
-          KBTopBar(
-            config: component.config,
-            currentPath: component.currentPath,
-            bottom: true,
-          ),
       ],
     );
   }
@@ -515,13 +602,14 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
     }
 
     return ArcaneDiv(
+      classes: 'kb-article-panel',
       styles: const ArcaneStyleData(flex: FlexPreset.expand, minWidth: '0'),
       children: [
         _buildBreadcrumbs(),
         if (component.title != null) _buildTitle(),
         if (component.description != null) _buildDescription(),
         if (hasMetadata) _buildMetadata(),
-        if (demoWidget != null) demoWidget,
+        ?demoWidget,
         div(classes: 'prose', [component.content]),
         if (component.tags.isNotEmpty) _buildTagsFooter(),
         if (component.config.ratingEnabled) _buildRating(),
@@ -541,6 +629,15 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
       return pageOverride;
     }
     return component.config.pageNavEnabled;
+  }
+
+  String _activeStylesheetId() {
+    for (KBStylesheetOption option in component.stylesheetOptions) {
+      if (identical(option.stylesheet, component.stylesheet)) {
+        return option.id;
+      }
+    }
+    return component.stylesheetOptions.first.id;
   }
 
   /// Build page rating widget
@@ -629,42 +726,13 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
             ),
             children: [
               ArcaneIcon.edit(size: IconSize.sm),
-              Text(
-                'Updated ${_formatLastModified(component.lastModified!)}',
-              ),
+              Text('Updated ${_formatLastModified(component.lastModified!)}'),
             ],
           ),
 
         // Tags inline (small badges)
         if (component.tags.isNotEmpty)
-          ArcaneDiv(
-            styles: const ArcaneStyleData(
-              display: Display.flex,
-              flexWrap: FlexWrap.wrap,
-              gap: Gap.xs,
-            ),
-            children: component.tags
-                .map(
-                  (String tag) => ArcaneDiv(
-                    classes: 'kb-tag',
-                    styles: const ArcaneStyleData(
-                      display: Display.inlineFlex,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      gap: Gap.xs,
-                      fontSize: FontSize.xs,
-                      padding: PaddingPreset.xs,
-                      background: Background.muted,
-                      borderRadius: Radius.sm,
-                      textColor: TextColor.mutedForeground,
-                    ),
-                    children: [
-                      ArcaneIcon.tag(size: IconSize.xs),
-                      Text(tag),
-                    ],
-                  ),
-                )
-                .toList(),
-          ),
+          KBTagList(tags: component.tags, size: KBTagSize.xs),
       ],
     );
   }
@@ -679,44 +747,16 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
         borderTop: BorderPreset.subtle,
       ),
       children: [
-        ArcaneDiv(
-          styles: const ArcaneStyleData(
+        const ArcaneDiv(
+          styles: ArcaneStyleData(
             fontSize: FontSize.sm,
             fontWeight: FontWeight.w600,
             textColor: TextColor.mutedForeground,
             margin: MarginPreset.bottomSm,
           ),
-          children: const [Text('Tags')],
+          children: [Text('Tags')],
         ),
-        ArcaneDiv(
-          styles: const ArcaneStyleData(
-            display: Display.flex,
-            flexWrap: FlexWrap.wrap,
-            gap: Gap.sm,
-          ),
-          children: component.tags
-              .map(
-                (String tag) => ArcaneDiv(
-                  classes: 'kb-tag-large',
-                  styles: const ArcaneStyleData(
-                    display: Display.inlineFlex,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    gap: Gap.xs,
-                    fontSize: FontSize.sm,
-                    padding: PaddingPreset.sm,
-                    background: Background.surface,
-                    border: BorderPreset.subtle,
-                    borderRadius: Radius.md,
-                    textColor: TextColor.primary,
-                  ),
-                  children: [
-                    ArcaneIcon.tag(size: IconSize.sm),
-                    Text(tag),
-                  ],
-                ),
-              )
-              .toList(),
-        ),
+        KBTagList(tags: component.tags, size: KBTagSize.md),
       ],
     );
   }
@@ -828,6 +868,7 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
   /// Table of contents sidebar
   Widget _buildTableOfContents() {
     return ArcaneDiv(
+      classes: 'kb-toc-panel',
       styles: const ArcaneStyleData(
         position: Position.sticky,
         raw: {

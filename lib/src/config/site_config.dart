@@ -1,3 +1,5 @@
+import 'package:arcane_jaspr/arcane_jaspr.dart';
+
 /// Base URL from environment, set via `--define=BASE_URL=/path`.
 const String _envBaseUrl = String.fromEnvironment('BASE_URL');
 
@@ -32,6 +34,8 @@ class SiteConfig {
 
   /// Whether to show the theme toggle button.
   final bool themeToggleEnabled;
+
+  final bool stylesheetSwitcherEnabled;
 
   /// Default theme mode.
   final KBThemeMode defaultTheme;
@@ -96,6 +100,7 @@ class SiteConfig {
     this.searchEnabled = true,
     this.tocEnabled = true,
     this.themeToggleEnabled = true,
+    this.stylesheetSwitcherEnabled = false,
     this.defaultTheme = KBThemeMode.dark,
     this.primaryColor,
     this.footerText,
@@ -152,6 +157,18 @@ class SiteConfig {
         : githubUrl!;
     return '$repoUrl/edit/$editBranch/$contentPath';
   }
+}
+
+class KBStylesheetOption {
+  final String id;
+  final String label;
+  final ArcaneStylesheet stylesheet;
+
+  const KBStylesheetOption({
+    required this.id,
+    required this.label,
+    required this.stylesheet,
+  });
 }
 
 /// Theme mode options for the knowledge base.

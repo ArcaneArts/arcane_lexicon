@@ -16,6 +16,8 @@ Arcane Lexicon supports two callout authoring styles:
 1. GitHub-style callout markdown (`> [!TYPE]`).
 2. Rich markdown callout tags (`<Note>`, `<Warning>`, etc.).
 
+GitHub-style callouts render as compact GitHub-like alerts. Rich callout tags render as branded Arcane components with larger icon treatment and stronger theme styling.
+
 ## GitHub-Style Callouts
 
 ### Note

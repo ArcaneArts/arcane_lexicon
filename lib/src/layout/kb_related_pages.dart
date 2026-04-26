@@ -1,5 +1,6 @@
 import 'package:arcane_jaspr/arcane_jaspr.dart';
 import 'package:arcane_jaspr/html.dart' show ArcaneDiv, ArcaneLink;
+import 'package:arcane_lexicon/src/components/kb_tag_chips.dart';
 
 import '../config/site_config.dart';
 import '../navigation/nav_item.dart';
@@ -50,10 +51,7 @@ class KBRelatedPages extends StatelessWidget {
         ),
         ArcaneDiv(
           classes: 'kb-related-grid',
-          styles: const ArcaneStyleData(
-            display: Display.grid,
-            gap: Gap.md,
-          ),
+          styles: const ArcaneStyleData(display: Display.grid, gap: Gap.md),
           children: relatedPages
               .take(maxItems)
               .map((_RelatedPage page) => _buildRelatedCard(page))
@@ -78,14 +76,16 @@ class KBRelatedPages extends StatelessWidget {
         final Set<String> sharedTags = currentTagSet.intersection(itemTagSet);
 
         if (sharedTags.isNotEmpty) {
-          results.add(_RelatedPage(
-            title: item.title,
-            path: item.path,
-            description: item.description,
-            sharedTags: sharedTags.toList(),
-            relevance: sharedTags.length,
-            section: section,
-          ));
+          results.add(
+            _RelatedPage(
+              title: item.title,
+              path: item.path,
+              description: item.description,
+              sharedTags: sharedTags.toList(),
+              relevance: sharedTags.length,
+              section: section,
+            ),
+          );
         }
       }
     }
@@ -141,30 +141,22 @@ class KBRelatedPages extends StatelessWidget {
                 textColor: TextColor.mutedForeground,
               ),
               children: [
-                Text(page.description!.length > 100
-                    ? '${page.description!.substring(0, 100)}...'
-                    : page.description!),
+                Text(
+                  page.description!.length > 100
+                      ? '${page.description!.substring(0, 100)}...'
+                      : page.description!,
+                ),
               ],
             ),
           ArcaneDiv(
-            styles: const ArcaneStyleData(
-              display: Display.flex,
-              flexWrap: FlexWrap.wrap,
-              gap: Gap.xs,
-              margin: MarginPreset.topXs,
-            ),
-            children: page.sharedTags
-                .map((String tag) => ArcaneDiv(
-                      styles: const ArcaneStyleData(
-                        fontSize: FontSize.xs,
-                        padding: PaddingPreset.xs,
-                        background: Background.muted,
-                        borderRadius: Radius.sm,
-                        textColor: TextColor.mutedForeground,
-                      ),
-                      children: [Text(tag)],
-                    ))
-                .toList(),
+            styles: const ArcaneStyleData(margin: MarginPreset.topXs),
+            children: <Widget>[
+              KBTagList(
+                tags: page.sharedTags,
+                size: KBTagSize.xs,
+                showIcon: false,
+              ),
+            ],
           ),
         ],
       ),

@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:arcane_lexicon/src/config/site_config.dart';
+
 /// SVG icons used in JavaScript for dynamic DOM manipulation.
 class KBIcons {
   /// Copy icon (Lucide copy)
@@ -20,8 +24,14 @@ class KBScriptConfig {
 /// Generates client-side JavaScript for the knowledge base.
 class KBScripts {
   final String basePath;
+  final List<KBStylesheetOption> stylesheetOptions;
+  final String defaultStylesheetId;
 
-  const KBScripts({this.basePath = ''});
+  const KBScripts({
+    this.basePath = '',
+    this.stylesheetOptions = const <KBStylesheetOption>[],
+    this.defaultStylesheetId = '',
+  });
 
   /// Generate the complete knowledge base scripts.
   String generate() {
@@ -31,7 +41,9 @@ class KBScripts {
     if (window.__kbGlobalInitialized) return;
     window.__kbGlobalInitialized = true;
     ${_themeUtilities()}
+    ${_stylesheetUtilities()}
     ${_themeToggleHandler()}
+    ${_stylesheetToggleHandler()}
     ${_searchFunctionality()}
     ${_sidebarCollapse()}
     ${_softNavigation()}
@@ -63,21 +75,51 @@ class KBScripts {
 
   /// Generate theme initialization script (runs before body).
   String generateThemeInit() {
+    String stylesheetJson = _stylesheetOptionsJson();
+    String fallbackStylesheetId = _fallbackStylesheetId();
     return '''
 (function() {
   var mode = localStorage.getItem('arcane-theme-mode') || '${KBScriptConfig.defaultThemeMode}';
+  var stylesheetOptions = $stylesheetJson;
+  var stylesheetId = localStorage.getItem('arcane-stylesheet-id') || '$fallbackStylesheetId';
+  if (stylesheetOptions.length && !stylesheetOptions.some(function(option) { return option.id === stylesheetId; })) {
+    stylesheetId = '$fallbackStylesheetId';
+  }
   window.arcaneThemeMode = mode;
+  window.arcaneStylesheetId = stylesheetId;
   document.documentElement.classList.remove('dark', 'light');
   document.documentElement.classList.add(mode === 'dark' ? 'dark' : 'light');
+
+  function applyStylesheetMedia() {
+    if (!stylesheetOptions.length) return;
+    stylesheetOptions.forEach(function(option) {
+      var themeTag = document.getElementById('arcane-theme-vars-' + option.id);
+      var componentTag = document.getElementById('arcane-component-styles-' + option.id);
+      var media = option.id === stylesheetId ? 'all' : 'not all';
+      if (themeTag) themeTag.media = media;
+      if (componentTag) componentTag.media = media;
+    });
+  }
 
   function applyRootTheme() {
     var root = document.getElementById('arcane-root');
     if (!root) return false;
     root.classList.remove('dark', 'light');
     root.classList.add(mode === 'dark' ? 'dark' : 'light');
+    stylesheetOptions.forEach(function(option) {
+      root.classList.remove('kb-style-' + option.id);
+      if (option.bodyClass) root.classList.remove(option.bodyClass);
+    });
+    stylesheetOptions.forEach(function(option) {
+      if (option.id === stylesheetId) {
+        root.classList.add('kb-style-' + option.id);
+        if (option.bodyClass) root.classList.add(option.bodyClass);
+      }
+    });
     return true;
   }
 
+  applyStylesheetMedia();
   if (!applyRootTheme() && typeof MutationObserver !== 'undefined') {
     var observer = new MutationObserver(function() {
       if (applyRootTheme()) {
@@ -128,6 +170,61 @@ updateClasses();
 updateModeToggleIcon(getCurrentMode());
 ''';
 
+  String _stylesheetUtilities() {
+    String stylesheetJson = _stylesheetOptionsJson();
+    String fallbackStylesheetId = _fallbackStylesheetId();
+    return '''
+function getCurrentStylesheetId() {
+  var id = localStorage.getItem('arcane-stylesheet-id') || '$fallbackStylesheetId';
+  var options = getStylesheetOptions();
+  if (!options.length) return id;
+  var valid = options.some(function(option) { return option.id === id; });
+  return valid ? id : '$fallbackStylesheetId';
+}
+function getStylesheetOptions() {
+  return $stylesheetJson;
+}
+function updateStylesheetClasses() {
+  var options = getStylesheetOptions();
+  if (!options.length) return;
+  var id = getCurrentStylesheetId();
+  var root = document.getElementById('arcane-root');
+  options.forEach(function(option) {
+    var themeTag = document.getElementById('arcane-theme-vars-' + option.id);
+    var componentTag = document.getElementById('arcane-component-styles-' + option.id);
+    var media = option.id === id ? 'all' : 'not all';
+    if (themeTag) themeTag.media = media;
+    if (componentTag) componentTag.media = media;
+    if (root) {
+      root.classList.remove('kb-style-' + option.id);
+      if (option.bodyClass) root.classList.remove(option.bodyClass);
+    }
+  });
+  if (root) {
+    options.forEach(function(option) {
+      if (option.id === id) {
+        root.classList.add('kb-style-' + option.id);
+        if (option.bodyClass) root.classList.add(option.bodyClass);
+      }
+    });
+  }
+}
+function updateStylesheetSelect(id) {
+  document.querySelectorAll('[data-kb-stylesheet-select]').forEach(function(select) {
+    select.value = id;
+  });
+}
+function setStylesheetId(id) {
+  localStorage.setItem('arcane-stylesheet-id', id);
+  window.arcaneStylesheetId = id;
+  updateStylesheetClasses();
+  updateStylesheetSelect(id);
+}
+updateStylesheetClasses();
+updateStylesheetSelect(getCurrentStylesheetId());
+''';
+  }
+
   static String _themeToggleHandler() => '''
 // ===== THEME TOGGLE =====
 var themeToggle = document.getElementById('theme-toggle');
@@ -139,6 +236,38 @@ if (themeToggle) {
   });
 }
 ''';
+
+  String _stylesheetToggleHandler() => '''
+document.querySelectorAll('[data-kb-stylesheet-select]').forEach(function(select) {
+  select.addEventListener('change', function() {
+    setStylesheetId(this.value);
+  });
+});
+''';
+
+  String _stylesheetOptionsJson() {
+    List<Map<String, String>> options = stylesheetOptions
+        .map(
+          (KBStylesheetOption option) => <String, String>{
+            'id': option.id,
+            'label': option.label,
+            if (option.stylesheet.bodyClass != null)
+              'bodyClass': option.stylesheet.bodyClass!,
+          },
+        )
+        .toList();
+    return jsonEncode(options);
+  }
+
+  String _fallbackStylesheetId() {
+    if (defaultStylesheetId.isNotEmpty) {
+      return defaultStylesheetId;
+    }
+    if (stylesheetOptions.isEmpty) {
+      return '';
+    }
+    return stylesheetOptions.first.id;
+  }
 
   String _searchFunctionality() =>
       '''
