@@ -1,4 +1,5 @@
 import 'package:arcane_jaspr/arcane_jaspr.dart';
+import 'package:arcane_lexicon/src/layout/kb_renderers.dart';
 
 /// Base URL from environment, set via `--define=BASE_URL=/path`.
 const String _envBaseUrl = String.fromEnvironment('BASE_URL');
@@ -23,6 +24,8 @@ class SiteConfig {
   /// The content directory containing markdown files.
   final String contentDirectory;
 
+  final String? landingPath;
+
   /// The route for the home page.
   final String homeRoute;
 
@@ -36,6 +39,8 @@ class SiteConfig {
   final bool themeToggleEnabled;
 
   final bool stylesheetSwitcherEnabled;
+
+  final bool paletteSwitcherEnabled;
 
   /// Default theme mode.
   final KBThemeMode defaultTheme;
@@ -96,11 +101,13 @@ class SiteConfig {
     this.githubUrl,
     this.baseUrl = _envBaseUrl,
     this.contentDirectory = 'content',
+    this.landingPath,
     this.homeRoute = '/',
     this.searchEnabled = true,
     this.tocEnabled = true,
     this.themeToggleEnabled = true,
     this.stylesheetSwitcherEnabled = false,
+    this.paletteSwitcherEnabled = false,
     this.defaultTheme = KBThemeMode.dark,
     this.primaryColor,
     this.footerText,
@@ -131,13 +138,37 @@ class SiteConfig {
   /// Get the asset prefix for static assets.
   String get assetPrefix => baseUrl.isEmpty ? '' : baseUrl;
 
+  String? get landingEditPath {
+    String? rawPath = landingPath;
+    if (rawPath == null) {
+      return null;
+    }
+    String normalized = rawPath.trim().replaceAll('\\', '/');
+    while (normalized.startsWith('/')) {
+      normalized = normalized.substring(1);
+    }
+    if (normalized.isEmpty) {
+      return null;
+    }
+    if (normalized.endsWith('.md')) {
+      return normalized;
+    }
+    if (normalized.endsWith('/')) {
+      return '${normalized}index.md';
+    }
+    return '$normalized/index.md';
+  }
+
   /// Generate the GitHub edit URL for a given page path.
   String? editUrl(String pagePath) {
     if (githubUrl == null || !showEditLink) return null;
 
     // Convert URL path to file path
     String filePath = pagePath;
-    if (filePath == '/' || filePath.isEmpty) {
+    String? landingPath = landingEditPath;
+    if (landingPath != null && _isHomePath(pagePath)) {
+      filePath = landingPath;
+    } else if (filePath == '/' || filePath.isEmpty) {
       filePath = 'index.md';
     } else {
       // Remove leading slash
@@ -157,17 +188,49 @@ class SiteConfig {
         : githubUrl!;
     return '$repoUrl/edit/$editBranch/$contentPath';
   }
+
+  bool _isHomePath(String path) {
+    String normalizedPath = path.trim().isEmpty ? '/' : path.trim();
+    String normalizedHome = homeRoute.trim().isEmpty ? '/' : homeRoute.trim();
+    if (!normalizedPath.startsWith('/')) {
+      normalizedPath = '/$normalizedPath';
+    }
+    if (!normalizedHome.startsWith('/')) {
+      normalizedHome = '/$normalizedHome';
+    }
+    return normalizedPath == normalizedHome || normalizedPath == '/';
+  }
 }
 
 class KBStylesheetOption {
   final String id;
   final String label;
   final ArcaneStylesheet stylesheet;
+  final List<KBPaletteOption> palettes;
+  final KnowledgeBaseRenderers? knowledgeBaseRenderers;
 
   const KBStylesheetOption({
     required this.id,
     required this.label,
     required this.stylesheet,
+    this.palettes = const <KBPaletteOption>[],
+    this.knowledgeBaseRenderers,
+  });
+}
+
+class KBPaletteOption {
+  final String id;
+  final String label;
+  final ArcaneStylesheet stylesheet;
+  final String? bodyClass;
+  final String? swatch;
+
+  const KBPaletteOption({
+    required this.id,
+    required this.label,
+    required this.stylesheet,
+    this.bodyClass,
+    this.swatch,
   });
 }
 

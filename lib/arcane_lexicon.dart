@@ -8,6 +8,7 @@
 /// Create a full knowledge base site with 1-line theming:
 /// ```dart
 /// import 'package:arcane_jaspr_neon/arcane_jaspr_neon.dart';
+/// import 'package:arcane_jaspr_neubrutalism/arcane_jaspr_neubrutalism.dart';
 /// import 'package:arcane_jaspr_shadcn/arcane_jaspr_shadcn.dart';
 /// import 'package:arcane_lexicon/arcane_lexicon.dart' hide runApp;
 ///
@@ -16,6 +17,9 @@
 /// );
 /// const ArcaneStylesheet neonStylesheet = NeonStylesheet(
 ///   theme: NeonTheme.green,
+/// );
+/// const ArcaneStylesheet neubrutalismStylesheet = NeubrutalismStylesheet(
+///   theme: NeubrutalismTheme.yellow,
 /// );
 /// const ArcaneStylesheet selectedStylesheet = shadcnStylesheet;
 ///
@@ -50,6 +54,7 @@ export 'src/navigation/nav_builder.dart';
 
 // Layout components
 export 'src/layout/kb_layout.dart';
+export 'src/layout/kb_renderers.dart';
 export 'src/layout/kb_sidebar.dart';
 export 'src/layout/kb_top_bar.dart';
 export 'src/layout/kb_page_nav.dart';

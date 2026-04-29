@@ -1,7 +1,6 @@
 import 'package:arcane_jaspr/arcane_jaspr.dart';
 import 'package:arcane_jaspr/html.dart' show ArcaneDiv;
 import 'package:arcane_jaspr/web.dart' show RawText, div, link, meta, script;
-import 'package:arcane_lexicon/src/components/kb_tag_chips.dart';
 import 'package:jaspr_content/jaspr_content.dart';
 
 import '../config/site_config.dart';
@@ -10,10 +9,7 @@ import '../navigation/nav_item.dart';
 import '../navigation/nav_section.dart';
 import '../scripts/kb_scripts.dart';
 import '../styles/kb_styles.dart';
-import 'kb_page_nav.dart';
-import 'kb_rating.dart';
-import 'kb_sidebar.dart';
-import 'kb_top_bar.dart';
+import 'kb_renderers.dart';
 
 /// Callback type for building demo components.
 ///
@@ -43,6 +39,7 @@ class KBLayout extends PageLayoutBase {
            KBScripts(
              basePath: config.baseUrl,
              stylesheetOptions: stylesheetOptions,
+             paletteSwitcherEnabled: config.paletteSwitcherEnabled,
            );
 
   @override
@@ -57,6 +54,10 @@ class KBLayout extends PageLayoutBase {
     List<KBStylesheetOption> effectiveStylesheetOptions =
         _effectiveStylesheetOptions();
     String activeStylesheetId = _activeStylesheetId(effectiveStylesheetOptions);
+    String activePaletteId = _activePaletteId(
+      effectiveStylesheetOptions,
+      activeStylesheetId,
+    );
 
     // Title
     final String title = pageData['title'] as String? ?? config.name;
@@ -110,19 +111,24 @@ class KBLayout extends PageLayoutBase {
       );
     } else {
       for (KBStylesheetOption option in effectiveStylesheetOptions) {
-        String rewrittenBaseCss = _rewriteAssetUrls(
-          option.stylesheet.baseCss,
-          assetPrefix,
-        );
-        yield Widget.element(
-          tag: 'style',
-          attributes: <String, String>{
-            'id': 'arcane-theme-vars-${option.id}',
-            'data-kb-stylesheet-id': option.id,
-            'media': option.id == activeStylesheetId ? 'all' : 'not all',
-          },
-          children: [RawText(rewrittenBaseCss)],
-        );
+        for (_PaletteEntry palette in _palettesFor(option)) {
+          bool isActive =
+              option.id == activeStylesheetId && palette.id == activePaletteId;
+          String rewrittenBaseCss = _rewriteAssetUrls(
+            palette.stylesheet.baseCss,
+            assetPrefix,
+          );
+          yield Widget.element(
+            tag: 'style',
+            attributes: <String, String>{
+              'id': 'arcane-theme-vars-${option.id}-${palette.id}',
+              'data-kb-stylesheet-id': option.id,
+              'data-kb-palette-id': palette.id,
+              'media': isActive ? 'all' : 'not all',
+            },
+            children: [RawText(rewrittenBaseCss)],
+          );
+        }
       }
     }
 
@@ -146,23 +152,27 @@ class KBLayout extends PageLayoutBase {
       );
     } else {
       for (KBStylesheetOption option in effectiveStylesheetOptions) {
-        String rewrittenWidgetCss = _rewriteAssetUrls(
-          option.stylesheet.componentCss,
-          assetPrefix,
-        );
-        yield Widget.element(
-          tag: 'style',
-          attributes: <String, String>{
-            'id': 'arcane-component-styles-${option.id}',
-            'data-kb-stylesheet-id': option.id,
-            'media': option.id == activeStylesheetId ? 'all' : 'not all',
-          },
-          children: [RawText(rewrittenWidgetCss)],
-        );
+        for (_PaletteEntry palette in _palettesFor(option)) {
+          bool isActive =
+              option.id == activeStylesheetId && palette.id == activePaletteId;
+          String rewrittenWidgetCss = _rewriteAssetUrls(
+            palette.stylesheet.componentCss,
+            assetPrefix,
+          );
+          yield Widget.element(
+            tag: 'style',
+            attributes: <String, String>{
+              'id': 'arcane-component-styles-${option.id}-${palette.id}',
+              'data-kb-stylesheet-id': option.id,
+              'data-kb-palette-id': palette.id,
+              'media': isActive ? 'all' : 'not all',
+            },
+            children: [RawText(rewrittenWidgetCss)],
+          );
+        }
       }
     }
 
-    // Load external CSS (Google Fonts, etc.)
     List<String> externalCssUrls = _externalCssUrls(effectiveStylesheetOptions);
     if (externalCssUrls.isNotEmpty) {
       yield const link(rel: 'preconnect', href: 'https://fonts.googleapis.com');
@@ -221,6 +231,9 @@ class KBLayout extends PageLayoutBase {
 
     // Extract component type for demo injection
     final String? componentType = pageData['component'] as String?;
+    bool isLanding =
+        _landingValue(pageData['landing']) ||
+        _pathsMatch(page.url, config.homeRoute);
     bool? pageNavOverride;
     dynamic rawPageNav = pageData['pageNav'];
     if (rawPageNav is bool) {
@@ -254,6 +267,7 @@ class KBLayout extends PageLayoutBase {
       date: date,
       lastModified: lastModified,
       componentType: componentType,
+      landing: isLanding,
       pageNavOverride: pageNavOverride,
       demoBuilder: demoBuilder,
       content: child,
@@ -282,16 +296,65 @@ class KBLayout extends PageLayoutBase {
       if (identical(option.stylesheet, stylesheet)) {
         return option.id;
       }
+      for (KBPaletteOption palette in option.palettes) {
+        if (identical(palette.stylesheet, stylesheet)) {
+          return option.id;
+        }
+      }
     }
     return options.first.id;
+  }
+
+  String _activePaletteId(
+    List<KBStylesheetOption> options,
+    String activeStylesheetId,
+  ) {
+    for (KBStylesheetOption option in options) {
+      if (option.id != activeStylesheetId) {
+        continue;
+      }
+      List<_PaletteEntry> palettes = _palettesFor(option);
+      for (_PaletteEntry palette in palettes) {
+        if (identical(palette.stylesheet, stylesheet)) {
+          return palette.id;
+        }
+      }
+      return palettes.first.id;
+    }
+    return _PaletteEntry.defaultId;
+  }
+
+  List<_PaletteEntry> _palettesFor(KBStylesheetOption option) {
+    if (option.palettes.isEmpty) {
+      return <_PaletteEntry>[
+        _PaletteEntry(
+          id: _PaletteEntry.defaultId,
+          label: option.label,
+          stylesheet: option.stylesheet,
+        ),
+      ];
+    }
+    List<_PaletteEntry> result = <_PaletteEntry>[];
+    for (KBPaletteOption palette in option.palettes) {
+      result.add(
+        _PaletteEntry(
+          id: palette.id,
+          label: palette.label,
+          stylesheet: palette.stylesheet,
+        ),
+      );
+    }
+    return result;
   }
 
   List<String> _externalCssUrls(List<KBStylesheetOption> options) {
     List<String> urls = <String>[];
     for (KBStylesheetOption option in options) {
-      for (String url in option.stylesheet.externalCssUrls) {
-        if (!urls.contains(url)) {
-          urls.add(url);
+      for (_PaletteEntry palette in _palettesFor(option)) {
+        for (String url in palette.stylesheet.externalCssUrls) {
+          if (!urls.contains(url)) {
+            urls.add(url);
+          }
         }
       }
     }
@@ -405,6 +468,19 @@ class KBLayout extends PageLayoutBase {
     final String normalB = b.endsWith('/') ? b.substring(0, b.length - 1) : b;
     return normalA == normalB;
   }
+
+  bool _landingValue(dynamic value) {
+    if (value is bool) {
+      return value;
+    }
+    if (value is String) {
+      String normalized = value.trim().toLowerCase();
+      return normalized == 'true' ||
+          normalized == 'yes' ||
+          normalized == 'landing';
+    }
+    return false;
+  }
 }
 
 /// Documentation page wrapper with light/dark mode toggle.
@@ -424,6 +500,7 @@ class ThemedKBPage extends StatefulWidget {
   final String? date;
   final String? lastModified;
   final String? componentType;
+  final bool landing;
   final bool? pageNavOverride;
   final DemoBuilder? demoBuilder;
   final Widget content;
@@ -444,6 +521,7 @@ class ThemedKBPage extends StatefulWidget {
     this.date,
     this.lastModified,
     this.componentType,
+    this.landing = false,
     this.pageNavOverride,
     this.demoBuilder,
     required this.content,
@@ -464,19 +542,29 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Dark mode uses .dark class (defined in stylesheet baseCss)
-    final String themeClass = _isDark ? 'dark' : '';
-    final String? stylesheetClass = component.stylesheet.bodyClass;
-    final String? stylesheetOptionClass = component.stylesheetOptions.isEmpty
+    String activeStylesheetId = component.stylesheetOptions.isEmpty
+        ? ''
+        : _activeStylesheetId();
+    String activePaletteId = component.stylesheetOptions.isEmpty
+        ? ''
+        : _activePaletteId(activeStylesheetId);
+    String themeClass = _isDark ? 'dark' : '';
+    String? stylesheetClass = component.stylesheetOptions.isEmpty
+        ? component.stylesheet.bodyClass
+        : _activePaletteBodyClass(activeStylesheetId, activePaletteId);
+    String? stylesheetOptionClass = component.stylesheetOptions.isEmpty
         ? null
-        : 'kb-style-${_activeStylesheetId()}';
-    final String rootClasses = [
+        : 'kb-style-$activeStylesheetId';
+    String? paletteOptionClass = component.stylesheetOptions.isEmpty
+        ? null
+        : 'kb-palette-$activePaletteId';
+    String rootClasses = [
       themeClass,
       stylesheetOptionClass,
+      paletteOptionClass,
       stylesheetClass,
     ].where((String? c) => c != null && c.isNotEmpty).join(' ');
 
-    // Wrap with ArcaneThemeProvider to enable context.renderers access
     return ArcaneThemeProvider(
       stylesheet: component.stylesheet,
       brightness: _isDark ? Brightness.dark : Brightness.light,
@@ -489,13 +577,40 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
           textColor: TextColor.primary,
           fontFamily: FontFamily.sans,
         ),
-        children: [_buildPageLayout(), ..._buildScripts()],
+        children: [..._buildStyleSlots(activeStylesheetId), ..._buildScripts()],
       ),
     );
   }
 
-  /// Main page layout structure
-  Widget _buildPageLayout() {
+  Iterable<Widget> _buildStyleSlots(String activeStylesheetId) sync* {
+    List<KBStylesheetOption> options = _effectiveStylesheetOptions();
+    for (KBStylesheetOption option in options) {
+      bool active = option.id == activeStylesheetId;
+      KnowledgeBaseRenderers renderers =
+          option.knowledgeBaseRenderers ?? _defaultRenderersFor(option.id);
+      ArcaneStylesheet slotStylesheet = option.stylesheet;
+      String slotClass = renderers is DefaultKnowledgeBaseRenderers
+          ? renderers.slotClass
+          : '${option.id}-kb-slot';
+      yield ArcaneThemeProvider(
+        stylesheet: slotStylesheet,
+        brightness: _isDark ? Brightness.dark : Brightness.light,
+        child: div(
+          classes:
+              'kb-style-slot $slotClass ${active ? 'kb-style-slot-active' : ''}',
+          attributes: <String, String>{
+            'data-kb-style-slot': option.id,
+            'aria-hidden': active ? 'false' : 'true',
+            if (!active) 'hidden': '',
+            if (!active) 'inert': '',
+          },
+          [_buildPageLayoutFor(renderers)],
+        ),
+      );
+    }
+  }
+
+  Widget _buildPageLayoutFor(KnowledgeBaseRenderers renderers) {
     bool showNavigationBar = component.config.navigationBarEnabled;
     bool useTopPosition =
         component.config.navigationBarPosition == KBNavigationBarPosition.top;
@@ -506,121 +621,63 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
     String activeStylesheetId = component.stylesheetOptions.isEmpty
         ? ''
         : _activeStylesheetId();
+    String activePaletteId = component.stylesheetOptions.isEmpty
+        ? ''
+        : _activePaletteId(activeStylesheetId);
 
-    return ArcaneDiv(
-      classes: 'kb-page-shell',
-      styles: const ArcaneStyleData(minHeight: '100vh'),
-      children: [
-        ArcaneScaffold(
-          title: showNavigationBar && useTopPosition
-              ? null
-              : component.config.name,
-          navigation: showNavigationBar && useTopPosition
-              ? KBTopBar(
-                  config: component.config,
-                  currentPath: component.currentPath,
-                  stylesheetOptions: component.stylesheetOptions,
-                  activeStylesheetId: activeStylesheetId,
-                  bottom: false,
-                )
-              : null,
-          sidebar: KBSidebar(
-            config: component.config,
-            manifest: component.manifest,
-            currentPath: component.currentPath,
-            showBranding: showSidebarControls,
-            showSearch: showSidebarControls && component.config.searchEnabled,
-            showThemeToggle:
-                showSidebarControls && component.config.themeToggleEnabled,
-            stylesheetOptions: component.stylesheetOptions,
-            activeStylesheetId: activeStylesheetId,
-            railTopOffset: sidebarTopOffset,
-          ),
-          body: _buildMainArea(),
-          footer: showNavigationBar && !useTopPosition
-              ? KBTopBar(
-                  config: component.config,
-                  currentPath: component.currentPath,
-                  stylesheetOptions: component.stylesheetOptions,
-                  activeStylesheetId: activeStylesheetId,
-                  bottom: true,
-                )
-              : null,
-        ),
-      ],
-    );
-  }
-
-  /// Main content area
-  Widget _buildMainArea() {
-    return ArcaneDiv(
-      classes: 'kb-main-area',
-      styles: const ArcaneStyleData(
-        flexGrow: 1,
-        display: Display.flex,
-        flexDirection: FlexDirection.column,
-        minHeight: '0',
+    return renderers.shell(
+      KnowledgeBaseRenderData(
+        config: component.config,
+        manifest: component.manifest,
+        stylesheetOptions: component.stylesheetOptions,
+        activeStylesheetId: activeStylesheetId,
+        activePaletteId: activePaletteId,
+        currentPath: component.currentPath,
+        title: component.title,
+        description: component.description,
+        toc: component.toc,
+        tags: component.tags,
+        readingTime: component.readingTime,
+        author: component.author,
+        date: component.date,
+        lastModified: component.lastModified,
+        landing: component.landing,
+        showNavigationBar: showNavigationBar,
+        useTopPosition: useTopPosition,
+        showSidebarControls: showSidebarControls,
+        sidebarTopOffset: sidebarTopOffset,
+        showPageNav: _showPageNav(),
+        demoWidget: _buildDemoWidget(),
+        content: component.content,
       ),
-      children: [_buildContentArea()],
     );
   }
 
-  /// Content area with main content and TOC
-  Widget _buildContentArea() {
-    return ArcaneDiv(
-      classes: 'kb-content-area',
-      styles: const ArcaneStyleData(
-        display: Display.flex,
-        gap: Gap.xl,
-        padding: PaddingPreset.xl,
-        maxWidth: MaxWidth.container,
-        margin: MarginPreset.autoX,
-        flexGrow: 1,
-        raw: {'padding-top': '2rem'},
-      ),
-      children: [
-        _buildMainContent(),
-        if (component.config.tocEnabled && component.toc != null)
-          _buildTableOfContents(),
-      ],
-    );
-  }
+  KnowledgeBaseRenderers _defaultRenderersFor(String id) => switch (id) {
+    'shadcn' => const ShadcnKnowledgeBaseRenderers(),
+    'neon' => const NeonKnowledgeBaseRenderers(),
+    'neubrutalism' => const NeubrutalismKnowledgeBaseRenderers(),
+    _ => const DefaultKnowledgeBaseRenderers(),
+  };
 
-  /// Main content section
-  Widget _buildMainContent() {
-    final bool hasMetadata =
-        component.tags.isNotEmpty ||
-        component.readingTime != null ||
-        component.author != null ||
-        component.date != null ||
-        component.lastModified != null;
-
-    // Build live demo if component type is specified
-    Widget? demoWidget;
-    if (component.componentType != null && component.demoBuilder != null) {
-      demoWidget = component.demoBuilder!(component.componentType!);
+  List<KBStylesheetOption> _effectiveStylesheetOptions() {
+    if (component.stylesheetOptions.isNotEmpty) {
+      return component.stylesheetOptions;
     }
+    return <KBStylesheetOption>[
+      KBStylesheetOption(
+        id: 'default',
+        label: 'Default',
+        stylesheet: component.stylesheet,
+      ),
+    ];
+  }
 
-    return ArcaneDiv(
-      classes: 'kb-article-panel',
-      styles: const ArcaneStyleData(flex: FlexPreset.expand, minWidth: '0'),
-      children: [
-        _buildBreadcrumbs(),
-        if (component.title != null) _buildTitle(),
-        if (component.description != null) _buildDescription(),
-        if (hasMetadata) _buildMetadata(),
-        ?demoWidget,
-        div(classes: 'prose', [component.content]),
-        if (component.tags.isNotEmpty) _buildTagsFooter(),
-        if (component.config.ratingEnabled) _buildRating(),
-        if (_showPageNav())
-          KBPageNav(
-            config: component.config,
-            manifest: component.manifest,
-            currentPath: component.currentPath,
-          ),
-      ],
-    );
+  Widget? _buildDemoWidget() {
+    if (component.componentType != null && component.demoBuilder != null) {
+      return component.demoBuilder!(component.componentType!);
+    }
+    return null;
   }
 
   bool _showPageNav() {
@@ -636,252 +693,52 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
       if (identical(option.stylesheet, component.stylesheet)) {
         return option.id;
       }
+      for (KBPaletteOption palette in option.palettes) {
+        if (identical(palette.stylesheet, component.stylesheet)) {
+          return option.id;
+        }
+      }
     }
     return component.stylesheetOptions.first.id;
   }
 
-  /// Build page rating widget
-  Widget _buildRating() {
-    return KBRating(
-      pagePath: component.currentPath,
-      config: RatingConfig(
-        enabled: true,
-        promptText: component.config.ratingPromptText,
-        thankYouText: component.config.ratingThankYouText,
-      ),
-    );
-  }
-
-  /// Build metadata row with reading time, author, date
-  Widget _buildMetadata() {
-    return ArcaneDiv(
-      classes: 'kb-page-metadata',
-      styles: const ArcaneStyleData(
-        display: Display.flex,
-        flexWrap: FlexWrap.wrap,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        gap: Gap.lg,
-        margin: MarginPreset.bottomLg,
-        padding: PaddingPreset.bottomMd,
-        borderBottom: BorderPreset.subtle,
-      ),
-      children: [
-        // Reading time
-        if (component.readingTime != null)
-          ArcaneDiv(
-            styles: const ArcaneStyleData(
-              display: Display.flex,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              gap: Gap.xs,
-              fontSize: FontSize.sm,
-              textColor: TextColor.mutedForeground,
-            ),
-            children: [
-              ArcaneIcon.clock(size: IconSize.sm),
-              Text('${component.readingTime} min read'),
-            ],
-          ),
-
-        // Author
-        if (component.author != null)
-          ArcaneDiv(
-            styles: const ArcaneStyleData(
-              display: Display.flex,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              gap: Gap.xs,
-              fontSize: FontSize.sm,
-              textColor: TextColor.mutedForeground,
-            ),
-            children: [
-              ArcaneIcon.user(size: IconSize.sm),
-              Text(component.author!),
-            ],
-          ),
-
-        // Date
-        if (component.date != null)
-          ArcaneDiv(
-            styles: const ArcaneStyleData(
-              display: Display.flex,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              gap: Gap.xs,
-              fontSize: FontSize.sm,
-              textColor: TextColor.mutedForeground,
-            ),
-            children: [
-              ArcaneIcon.calendar(size: IconSize.sm),
-              Text(component.date!),
-            ],
-          ),
-
-        // Last modified
-        if (component.lastModified != null)
-          ArcaneDiv(
-            styles: const ArcaneStyleData(
-              display: Display.flex,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              gap: Gap.xs,
-              fontSize: FontSize.sm,
-              textColor: TextColor.mutedForeground,
-            ),
-            children: [
-              ArcaneIcon.edit(size: IconSize.sm),
-              Text('Updated ${_formatLastModified(component.lastModified!)}'),
-            ],
-          ),
-
-        // Tags inline (small badges)
-        if (component.tags.isNotEmpty)
-          KBTagList(tags: component.tags, size: KBTagSize.xs),
-      ],
-    );
-  }
-
-  /// Build tags footer section
-  Widget _buildTagsFooter() {
-    return ArcaneDiv(
-      classes: 'kb-tags-footer',
-      styles: const ArcaneStyleData(
-        margin: MarginPreset.topXl,
-        padding: PaddingPreset.topLg,
-        borderTop: BorderPreset.subtle,
-      ),
-      children: [
-        const ArcaneDiv(
-          styles: ArcaneStyleData(
-            fontSize: FontSize.sm,
-            fontWeight: FontWeight.w600,
-            textColor: TextColor.mutedForeground,
-            margin: MarginPreset.bottomSm,
-          ),
-          children: [Text('Tags')],
-        ),
-        KBTagList(tags: component.tags, size: KBTagSize.md),
-      ],
-    );
-  }
-
-  /// Build breadcrumbs from current path
-  Widget _buildBreadcrumbs() {
-    final String path = component.currentPath;
-    final List<String> segments = path
-        .split('/')
-        .where((String segment) => segment.isNotEmpty)
-        .toList();
-
-    if (segments.isEmpty) {
-      return const ArcaneDiv(children: []);
+  String _activePaletteId(String activeStylesheetId) {
+    for (KBStylesheetOption option in component.stylesheetOptions) {
+      if (option.id != activeStylesheetId) {
+        continue;
+      }
+      if (option.palettes.isEmpty) {
+        return _PaletteEntry.defaultId;
+      }
+      for (KBPaletteOption palette in option.palettes) {
+        if (identical(palette.stylesheet, component.stylesheet)) {
+          return palette.id;
+        }
+      }
+      return option.palettes.first.id;
     }
+    return _PaletteEntry.defaultId;
+  }
 
-    final List<BreadcrumbItem> items = <BreadcrumbItem>[];
-
-    // Add "Home" as first item
-    items.add(
-      BreadcrumbItem(label: 'Home', href: component.config.fullPath('/')),
-    );
-
-    // Build remaining segments
-    String currentHref = '';
-    for (int i = 0; i < segments.length; i++) {
-      currentHref += '/${segments[i]}';
-      final bool isLast = i == segments.length - 1;
-      final String label = _formatSegment(segments[i]);
-
-      items.add(
-        BreadcrumbItem(
-          label: label,
-          href: isLast ? null : component.config.fullPath(currentHref),
-        ),
-      );
+  String? _activePaletteBodyClass(
+    String activeStylesheetId,
+    String activePaletteId,
+  ) {
+    for (KBStylesheetOption option in component.stylesheetOptions) {
+      if (option.id != activeStylesheetId) {
+        continue;
+      }
+      if (option.palettes.isEmpty) {
+        return option.stylesheet.bodyClass;
+      }
+      for (KBPaletteOption palette in option.palettes) {
+        if (palette.id == activePaletteId) {
+          return palette.bodyClass ?? palette.stylesheet.bodyClass;
+        }
+      }
+      return option.stylesheet.bodyClass;
     }
-
-    return ArcaneDiv(
-      styles: const ArcaneStyleData(margin: MarginPreset.bottomMd),
-      children: [
-        ArcaneBreadcrumbs(
-          items: items,
-          separator: BreadcrumbSeparator.chevron,
-          size: BreadcrumbSize.sm,
-        ),
-      ],
-    );
-  }
-
-  /// Format path segment into readable label
-  String _formatSegment(String segment) {
-    return segment
-        .split('-')
-        .map(
-          (String word) =>
-              word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1),
-        )
-        .join(' ');
-  }
-
-  /// Format ISO 8601 date to readable format (e.g., "Jan 15, 2025")
-  String _formatLastModified(String isoDate) {
-    try {
-      final DateTime dt = DateTime.parse(isoDate);
-      final List<String> months = <String>[
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
-    } catch (_) {
-      return isoDate;
-    }
-  }
-
-  Widget _buildTitle() {
-    return ArcaneDiv(
-      styles: const ArcaneStyleData(
-        margin: MarginPreset.bottomLg,
-        fontSize: FontSize.xl3,
-        fontWeight: FontWeight.bold,
-        textColor: TextColor.primary,
-      ),
-      children: [Text(component.title!)],
-    );
-  }
-
-  Widget _buildDescription() {
-    return ArcaneDiv(
-      styles: const ArcaneStyleData(
-        margin: MarginPreset.bottomXl,
-        textColor: TextColor.mutedForeground,
-        fontSize: FontSize.lg,
-      ),
-      children: [Text(component.description!)],
-    );
-  }
-
-  /// Table of contents sidebar
-  Widget _buildTableOfContents() {
-    return ArcaneDiv(
-      classes: 'kb-toc-panel',
-      styles: const ArcaneStyleData(
-        position: Position.sticky,
-        raw: {
-          'width': '220px',
-          'flex-shrink': '0',
-          'top': '80px',
-          'align-self': 'flex-start',
-          'max-height': 'calc(100vh - 100px)',
-          'overflow-y': 'auto',
-        },
-      ),
-      children: [ArcaneToc.custom(content: component.toc!.build())],
-    );
+    return component.stylesheet.bodyClass;
   }
 
   /// JavaScript for static site functionality
@@ -890,4 +747,18 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
     // Component interactivity scripts from arcane_jaspr
     yield const ArcaneScriptsComponent();
   }
+}
+
+class _PaletteEntry {
+  static const String defaultId = 'default';
+
+  final String id;
+  final String label;
+  final ArcaneStylesheet stylesheet;
+
+  const _PaletteEntry({
+    required this.id,
+    required this.label,
+    required this.stylesheet,
+  });
 }

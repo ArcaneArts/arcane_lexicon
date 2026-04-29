@@ -9,19 +9,27 @@ class KBTopBar extends StatelessWidget {
   final String currentPath;
   final List<KBStylesheetOption> stylesheetOptions;
   final String activeStylesheetId;
+  final String activePaletteId;
   final bool bottom;
+  final bool showBranding;
 
   const KBTopBar({
     required this.config,
     required this.currentPath,
     this.stylesheetOptions = const <KBStylesheetOption>[],
     this.activeStylesheetId = '',
+    this.activePaletteId = '',
     this.bottom = false,
+    this.showBranding = true,
   });
 
   @override
   Widget build(BuildContext context) {
     String positionClass = bottom ? ' kb-topbar-bottom' : '';
+    bool showStylesheetSwitcher =
+        config.stylesheetSwitcherEnabled && stylesheetOptions.length > 1;
+    bool showPaletteSwitcher =
+        config.paletteSwitcherEnabled && _activePalettes().length > 1;
     return div(classes: 'kb-topbar$positionClass', [
       div(classes: 'kb-topbar-inner', [
         div(classes: 'kb-topbar-left', [
@@ -33,18 +41,22 @@ class KBTopBar extends StatelessWidget {
             },
             [ArcaneIcon.panelLeft(size: IconSize.sm)],
           ),
-          a(href: config.fullPath('/'), classes: 'kb-topbar-brand', [
-            if (config.logo != null)
-              img(
-                classes: 'kb-topbar-logo',
-                src: _resolveLogoPath(config.logo!),
-                alt: '',
-              ),
-            span(classes: 'kb-topbar-brand-icon', [
-              ArcaneIcon.book(size: IconSize.sm),
+          if (showBranding)
+            a(href: config.fullPath('/'), classes: 'kb-topbar-brand', [
+              if (config.logo != null)
+                img(
+                  classes: 'kb-topbar-logo',
+                  src: _resolveLogoPath(config.logo!),
+                  alt: '',
+                )
+              else
+                span(classes: 'kb-topbar-brand-icon', [
+                  Widget.text(_brandInitial()),
+                ]),
+              span(classes: 'kb-topbar-brand-label', [
+                Widget.text(config.name),
+              ]),
             ]),
-            span(classes: 'kb-topbar-brand-label', [Widget.text(config.name)]),
-          ]),
           if (config.headerLinks.isNotEmpty)
             nav(classes: 'kb-topbar-nav', [
               for (NavLink link in config.headerLinks) _buildHeaderLink(link),
@@ -52,8 +64,11 @@ class KBTopBar extends StatelessWidget {
         ]),
         div(classes: 'kb-topbar-right', [
           if (config.searchEnabled) _buildSearch(),
-          if (config.stylesheetSwitcherEnabled && stylesheetOptions.length > 1)
-            _buildStylesheetSelect(),
+          if (showStylesheetSwitcher || showPaletteSwitcher)
+            div(classes: 'kb-style-switcher', [
+              if (showStylesheetSwitcher) _buildStylesheetSelect(),
+              if (showPaletteSwitcher) _buildPaletteSelect(),
+            ]),
           if (config.themeToggleEnabled)
             button(
               id: 'theme-toggle',
@@ -145,6 +160,38 @@ class KBTopBar extends StatelessWidget {
     );
   }
 
+  Widget _buildPaletteSelect() {
+    List<KBPaletteOption> palettes = _activePalettes();
+    return Widget.element(
+      tag: 'select',
+      classes: 'kb-palette-select',
+      attributes: const <String, String>{
+        'aria-label': 'Select palette',
+        'data-kb-palette-select': 'true',
+      },
+      children: [
+        for (KBPaletteOption palette in palettes)
+          Widget.element(
+            tag: 'option',
+            attributes: <String, String>{
+              'value': palette.id,
+              if (palette.id == activePaletteId) 'selected': 'selected',
+            },
+            children: [Widget.text(palette.label)],
+          ),
+      ],
+    );
+  }
+
+  List<KBPaletteOption> _activePalettes() {
+    for (KBStylesheetOption option in stylesheetOptions) {
+      if (option.id == activeStylesheetId) {
+        return option.palettes;
+      }
+    }
+    return const <KBPaletteOption>[];
+  }
+
   bool _isActive(String href) {
     String cleanHref = _normalizePath(_removeBasePrefix(href));
     String cleanCurrent = _normalizePath(currentPath);
@@ -202,5 +249,18 @@ class KBTopBar extends StatelessWidget {
       return value;
     }
     return '${config.assetPrefix}/$value';
+  }
+
+  String _brandInitial() {
+    List<String> parts = config.name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((String part) => part.isNotEmpty)
+        .toList();
+    String value = parts.isEmpty ? config.name.trim() : parts.last;
+    if (value.isEmpty) {
+      return '';
+    }
+    return value[0].toUpperCase();
   }
 }

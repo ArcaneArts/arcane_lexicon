@@ -80,6 +80,8 @@ KnowledgeBaseApp.create(
   stylesheet: const ShadcnStylesheet(theme: ShadcnTheme.midnight),
   // or
   // stylesheet: const NeonStylesheet(theme: NeonTheme.blue),
+  // or
+  // stylesheet: const NeubrutalismStylesheet(theme: NeubrutalismTheme.yellow),
 )
 ```
 

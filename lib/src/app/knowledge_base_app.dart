@@ -23,6 +23,7 @@ export '../layout/kb_layout.dart' show DemoBuilder;
 /// Example usage with 1-line theming:
 /// ```dart
 /// import 'package:arcane_jaspr_neon/arcane_jaspr_neon.dart';
+/// import 'package:arcane_jaspr_neubrutalism/arcane_jaspr_neubrutalism.dart';
 /// import 'package:arcane_jaspr_shadcn/arcane_jaspr_shadcn.dart';
 /// import 'package:arcane_lexicon/arcane_lexicon.dart' hide runApp;
 ///
@@ -31,6 +32,9 @@ export '../layout/kb_layout.dart' show DemoBuilder;
 /// );
 /// const ArcaneStylesheet neonStylesheet = NeonStylesheet(
 ///   theme: NeonTheme.green,
+/// );
+/// const ArcaneStylesheet neubrutalismStylesheet = NeubrutalismStylesheet(
+///   theme: NeubrutalismTheme.yellow,
 /// );
 /// const ArcaneStylesheet selectedStylesheet = shadcnStylesheet;
 ///
@@ -69,10 +73,14 @@ class KnowledgeBaseApp {
     DemoBuilder? demoBuilder,
     bool generateSearchIndex = true,
   }) async {
+    String? landingSourcePath = await _resolveLandingSourcePath(config);
+    Set<String> ignoredSourcePaths = _ignoredSourcePaths(landingSourcePath);
+
     // Build navigation manifest from content directory
     final NavBuilder navBuilder = NavBuilder(
       contentDirectory: config.contentDirectory,
       baseUrl: config.baseUrl,
+      ignoredSourcePaths: ignoredSourcePaths,
     );
     final NavManifest manifest = await navBuilder.build();
 
@@ -110,12 +118,12 @@ class KnowledgeBaseApp {
     final List<CustomComponent> defaultComponents =
         KBRichMarkdownComponents.defaults();
 
-    return ContentApp(
-      directory: config.contentDirectory,
-      parsers: [const MarkdownParser()],
-      layouts: [layout],
-      extensions: [...defaultExtensions, ...?extensions],
-      components: [...defaultComponents, ...?components],
+    return _contentApp(
+      config: config,
+      landingSourcePath: landingSourcePath,
+      layout: layout,
+      extensions: <PageExtension>[...defaultExtensions, ...?extensions],
+      components: <CustomComponent>[...defaultComponents, ...?components],
     );
   }
 
@@ -163,6 +171,8 @@ class KnowledgeBaseApp {
     List<KBStylesheetOption> stylesheetOptions = const <KBStylesheetOption>[],
     DemoBuilder? demoBuilder,
   }) {
+    String? landingSourcePath = _resolveLandingSourcePathSync(config);
+
     // Create scripts
     KBScripts scripts = KBScripts(
       basePath: config.baseUrl,
@@ -192,12 +202,12 @@ class KnowledgeBaseApp {
     final List<CustomComponent> defaultComponents =
         KBRichMarkdownComponents.defaults();
 
-    return ContentApp(
-      directory: config.contentDirectory,
-      parsers: [const MarkdownParser()],
-      layouts: [layout],
-      extensions: [...defaultExtensions, ...?extensions],
-      components: [...defaultComponents, ...?components],
+    return _contentApp(
+      config: config,
+      landingSourcePath: landingSourcePath,
+      layout: layout,
+      extensions: <PageExtension>[...defaultExtensions, ...?extensions],
+      components: <CustomComponent>[...defaultComponents, ...?components],
     );
   }
 
@@ -215,4 +225,148 @@ class KnowledgeBaseApp {
     }
     return stylesheetOptions.first.id;
   }
+
+  static ContentApp _contentApp({
+    required SiteConfig config,
+    required String? landingSourcePath,
+    required KBLayout layout,
+    required List<PageExtension> extensions,
+    required List<CustomComponent> components,
+  }) {
+    if (landingSourcePath == null) {
+      return ContentApp(
+        directory: config.contentDirectory,
+        parsers: const <PageParser>[MarkdownParser()],
+        layouts: <PageLayout>[layout],
+        extensions: extensions,
+        components: components,
+      );
+    }
+
+    String landingContent = io.File(
+      '${config.contentDirectory}/$landingSourcePath',
+    ).readAsStringSync();
+    Set<String> ignoredSourcePaths = _ignoredSourcePaths(landingSourcePath);
+
+    return ContentApp.custom(
+      loaders: <RouteLoader>[
+        MemoryLoader(
+          pages: <MemoryPage>[
+            MemoryPage(
+              path: 'index.md',
+              content: landingContent,
+              initialData: _landingInitialData(),
+            ),
+          ],
+        ),
+        _FilteredFilesystemLoader(
+          config.contentDirectory,
+          ignoredSourcePaths: ignoredSourcePaths,
+        ),
+      ],
+      configResolver: PageConfig.all(
+        dataLoaders: <DataLoader>[
+          FilesystemDataLoader('${config.contentDirectory}/_data'),
+        ],
+        parsers: const <PageParser>[MarkdownParser()],
+        layouts: <PageLayout>[layout],
+        extensions: extensions,
+        components: components,
+      ),
+    );
+  }
+
+  static Future<String?> _resolveLandingSourcePath(SiteConfig config) async {
+    String? landingPath = config.landingPath;
+    if (landingPath == null || landingPath.trim().isEmpty) {
+      return null;
+    }
+    List<String> candidates = _landingCandidates(landingPath);
+    for (String candidate in candidates) {
+      io.File file = io.File('${config.contentDirectory}/$candidate');
+      if (await file.exists()) {
+        return candidate;
+      }
+    }
+    throw Exception(
+      'Landing source not found: ${config.contentDirectory}/$landingPath',
+    );
+  }
+
+  static String? _resolveLandingSourcePathSync(SiteConfig config) {
+    String? landingPath = config.landingPath;
+    if (landingPath == null || landingPath.trim().isEmpty) {
+      return null;
+    }
+    List<String> candidates = _landingCandidates(landingPath);
+    for (String candidate in candidates) {
+      io.File file = io.File('${config.contentDirectory}/$candidate');
+      if (file.existsSync()) {
+        return candidate;
+      }
+    }
+    throw Exception(
+      'Landing source not found: ${config.contentDirectory}/$landingPath',
+    );
+  }
+
+  static List<String> _landingCandidates(String landingPath) {
+    String normalized = _normalizeSourcePath(landingPath);
+    if (normalized.isEmpty) {
+      return const <String>[];
+    }
+    if (normalized.endsWith('.md')) {
+      return <String>[normalized];
+    }
+    return <String>[
+      normalized.endsWith('/')
+          ? '${normalized}index.md'
+          : '$normalized/index.md',
+      '$normalized.md',
+    ];
+  }
+
+  static Set<String> _ignoredSourcePaths(String? landingSourcePath) {
+    if (landingSourcePath == null) {
+      return const <String>{};
+    }
+    return <String>{
+      'index.md',
+      landingSourcePath,
+    };
+  }
+
+  static String _normalizeSourcePath(String path) {
+    String normalized = path.trim().replaceAll('\\', '/');
+    while (normalized.startsWith('/')) {
+      normalized = normalized.substring(1);
+    }
+    return normalized;
+  }
+
+  static Map<String, Object?> _landingInitialData() => <String, Object?>{
+    'page': <String, Object?>{
+      'layout': 'kb',
+      'landing': true,
+      'pageNav': false,
+    },
+  };
+}
+
+class _FilteredFilesystemLoader extends FilesystemLoader {
+  final Set<String> ignoredSourcePaths;
+
+  _FilteredFilesystemLoader(
+    super.directory, {
+    required this.ignoredSourcePaths,
+  });
+
+  @override
+  Future<List<FilePageSource>> loadPageSources() =>
+      super.loadPageSources().then(
+        (List<FilePageSource> sources) => <FilePageSource>[
+          for (FilePageSource source in sources)
+            if (!ignoredSourcePaths.contains(source.path)) source,
+        ],
+      );
 }

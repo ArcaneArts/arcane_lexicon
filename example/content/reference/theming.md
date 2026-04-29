@@ -57,6 +57,19 @@ Gamer-inspired design with neon aesthetics:
 stylesheet: const NeonStylesheet(theme: NeonTheme.green)
 ```
 
+### NeubrutalismStylesheet
+
+Comic-book inspired NeuBrutalism aesthetic with bold flat colors:
+- Thick black borders (2-4px solid)
+- Hard-offset drop shadows (no blur)
+- Press-down interaction on `:active` (translate + shadow shrink)
+- Pop-art saturated palettes paired with pure black/white
+- Archivo Black headings, Space Grotesk body, JetBrains Mono code
+
+```dart
+stylesheet: const NeubrutalismStylesheet(theme: NeubrutalismTheme.yellow)
+```
+
 ## ShadcnTheme Options
 
 ### Neutral Themes
@@ -127,6 +140,34 @@ NeonStylesheet(theme: NeonTheme.purple)
 NeonStylesheet(theme: NeonTheme.rainbow)
 ```
 
+## NeubrutalismTheme Options
+
+Bold pop-art accent colors paired with thick black borders and hard shadows:
+
+| Theme | Color | Description |
+|-------|-------|-------------|
+| `yellow` | `#FFD23F` | High-vis yellow (default) |
+| `pink` | `#FF6B9D` | Hot bubblegum pink |
+| `mint` | `#95E1D3` | Cool mint green |
+| `orange` | `#FF8C42` | Warm pop-art orange |
+| `sky` | `#6FB3FF` | Cool electric blue |
+| `lavender` | `#B983FF` | Saturated purple |
+| `lime` | `#C1FF72` | Acid lime green |
+| `red` | `#FF4747` | Pure stop-sign red |
+
+### Examples
+
+```dart
+// Default high-vis yellow
+NeubrutalismStylesheet(theme: NeubrutalismTheme.yellow)
+
+// Bubblegum pop
+NeubrutalismStylesheet(theme: NeubrutalismTheme.pink)
+
+// Acid lime
+NeubrutalismStylesheet(theme: NeubrutalismTheme.lime)
+```
+
 ## Theme Toggle
 
 Users can toggle between light and dark modes using the theme toggle button in the sidebar. The preference is saved to localStorage.
@@ -166,6 +207,14 @@ The Neon theme uses custom fonts that must be included in your assets:
 
 > [!IMPORTANT]
 > NeonStylesheet requires font files in `/assets/fonts/`. See the arcane_jaspr documentation for font setup.
+
+### NeubrutalismStylesheet Fonts
+
+The NeuBrutalism theme loads three Google Fonts (no asset setup required):
+
+- **Headings**: Archivo Black
+- **Body**: Space Grotesk
+- **Code**: JetBrains Mono
 
 ## Custom CSS
 
@@ -238,7 +287,8 @@ Theme preference is stored in localStorage under the key `arcane-theme-mode`. Th
 
 ## Syntax Highlighting
 
-Code blocks use Highlight.js for syntax highlighting. Both stylesheets include theme-appropriate colors:
+Code blocks use Highlight.js for syntax highlighting. All stylesheets include theme-appropriate colors:
 
 - **ShadcnStylesheet**: GitHub-style highlighting (light in light mode, dark in dark mode)
 - **NeonStylesheet**: Neon terminal-style highlighting with primary color accents
+- **NeubrutalismStylesheet**: Flat high-contrast palette with hard borders and accent-tinted code backgrounds

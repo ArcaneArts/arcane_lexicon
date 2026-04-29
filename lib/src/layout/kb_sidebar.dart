@@ -18,6 +18,7 @@ class KBSidebar extends StatelessWidget {
   final bool showThemeToggle;
   final List<KBStylesheetOption> stylesheetOptions;
   final String activeStylesheetId;
+  final String activePaletteId;
   final String railTopOffset;
 
   const KBSidebar({
@@ -29,6 +30,7 @@ class KBSidebar extends StatelessWidget {
     this.showThemeToggle = true,
     this.stylesheetOptions = const <KBStylesheetOption>[],
     this.activeStylesheetId = '',
+    this.activePaletteId = '',
     this.railTopOffset = '0px',
   });
 
@@ -36,17 +38,25 @@ class KBSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     bool showStylesheetSwitcher =
         config.stylesheetSwitcherEnabled && stylesheetOptions.length > 1;
+    bool showPaletteSwitcher =
+        config.paletteSwitcherEnabled && _activePalettes().length > 1;
     bool showHeader =
-        showBranding || showSearch || showThemeToggle || showStylesheetSwitcher;
+        showBranding ||
+        showSearch ||
+        showThemeToggle ||
+        showStylesheetSwitcher ||
+        showPaletteSwitcher;
 
-    return div(classes: 'kb-sidebar', [
-      ArcaneScrollRail(
-        width: config.sidebarWidth,
-        topOffset: railTopOffset,
-        showBorder: true,
-        padding: '0',
-        scrollPersistenceId: 'kb-sidebar',
-        children: [
+    return div(
+      classes: 'kb-sidebar',
+      styles: Styles(
+        raw: <String, String>{
+          '--kb-sidebar-width': config.sidebarWidth,
+          '--kb-sidebar-rail-top': railTopOffset,
+        },
+      ),
+      [
+        div(classes: 'kb-sidebar-panel', [
           if (showHeader) _buildHeader(),
           nav(
             classes: 'sidebar-nav',
@@ -71,9 +81,9 @@ class KBSidebar extends StatelessWidget {
                 _buildCollapsibleSection(section, depth: 0),
             ],
           ),
-        ],
-      ),
-    ]);
+        ]),
+      ],
+    );
   }
 
   /// Build the sidebar header with branding and controls
@@ -81,6 +91,8 @@ class KBSidebar extends StatelessWidget {
     List<Widget> children = <Widget>[];
     bool showStylesheetSwitcher =
         config.stylesheetSwitcherEnabled && stylesheetOptions.length > 1;
+    bool showPaletteSwitcher =
+        config.paletteSwitcherEnabled && _activePalettes().length > 1;
 
     if (showBranding) {
       children.add(
@@ -100,7 +112,11 @@ class KBSidebar extends StatelessWidget {
       );
     }
 
-    bool hasControls = showSearch || showThemeToggle || showStylesheetSwitcher;
+    bool hasControls =
+        showSearch ||
+        showThemeToggle ||
+        showStylesheetSwitcher ||
+        showPaletteSwitcher;
     if (hasControls) {
       children.add(
         div(classes: 'sidebar-controls', [
@@ -116,7 +132,11 @@ class KBSidebar extends StatelessWidget {
   <div id="search-results" class="search-results"></div>
 </div>
 '''),
-          if (showStylesheetSwitcher) _buildStylesheetSelect(),
+          if (showStylesheetSwitcher || showPaletteSwitcher)
+            div(classes: 'kb-style-switcher', [
+              if (showStylesheetSwitcher) _buildStylesheetSelect(),
+              if (showPaletteSwitcher) _buildPaletteSelect(),
+            ]),
           if (showThemeToggle)
             button(
               id: 'theme-toggle',
@@ -161,6 +181,38 @@ class KBSidebar extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  Widget _buildPaletteSelect() {
+    List<KBPaletteOption> palettes = _activePalettes();
+    return Widget.element(
+      tag: 'select',
+      classes: 'kb-palette-select',
+      attributes: const <String, String>{
+        'aria-label': 'Select palette',
+        'data-kb-palette-select': 'true',
+      },
+      children: [
+        for (KBPaletteOption palette in palettes)
+          Widget.element(
+            tag: 'option',
+            attributes: <String, String>{
+              'value': palette.id,
+              if (palette.id == activePaletteId) 'selected': 'selected',
+            },
+            children: [Widget.text(palette.label)],
+          ),
+      ],
+    );
+  }
+
+  List<KBPaletteOption> _activePalettes() {
+    for (KBStylesheetOption option in stylesheetOptions) {
+      if (option.id == activeStylesheetId) {
+        return option.palettes;
+      }
+    }
+    return const <KBPaletteOption>[];
   }
 
   /// Build a fixed section that's always expanded (no toggle)

@@ -33,6 +33,7 @@ SiteConfig(
   githubUrl: 'https://github.com/myorg/myproject',
   baseUrl: '/docs',
   contentDirectory: 'content',
+  landingPath: 'Landing',
   homeRoute: '/',
   searchEnabled: true,
   tocEnabled: true,
@@ -74,6 +75,7 @@ SiteConfig(
 | `githubUrl` | `String?` | `null` | Repository URL for GitHub link/edit links |
 | `baseUrl` | `String` | `String.fromEnvironment('BASE_URL')` | Subpath prefix (for hosted subdirectories) |
 | `contentDirectory` | `String` | `'content'` | Markdown content directory |
+| `landingPath` | `String?` | `null` | Optional Markdown file or folder used as the styled home page |
 | `homeRoute` | `String` | `'/'` | Home route |
 | `searchEnabled` | `bool` | `true` | Enable search input/logic |
 | `tocEnabled` | `bool` | `true` | Enable right-side TOC |

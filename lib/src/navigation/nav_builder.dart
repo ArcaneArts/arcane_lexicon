@@ -8,10 +8,12 @@ import 'nav_section.dart';
 class NavBuilder {
   final String contentDirectory;
   final String baseUrl;
+  final Set<String> ignoredSourcePaths;
 
   NavBuilder({
     required this.contentDirectory,
     this.baseUrl = '',
+    this.ignoredSourcePaths = const <String>{},
   });
 
   /// Build the complete navigation tree from the content directory.
@@ -27,6 +29,7 @@ class NavBuilder {
     await _scanDirectory(
       contentDir,
       '',
+      '',
       rootItems,
       rootSections,
     );
@@ -40,6 +43,7 @@ class NavBuilder {
   Future<void> _scanDirectory(
     Directory dir,
     String pathPrefix,
+    String sourcePrefix,
     List<NavItem> items,
     List<NavSection> sections,
   ) async {
@@ -56,6 +60,10 @@ class NavBuilder {
         // Skip non-markdown files and special files
         if (!filename.endsWith('.md')) continue;
         if (filename.startsWith('_')) continue;
+        String sourcePath = sourcePrefix.isEmpty
+            ? filename
+            : '$sourcePrefix/$filename';
+        if (ignoredSourcePaths.contains(sourcePath)) continue;
 
         // Build the path
         String pagePath;
@@ -104,12 +112,16 @@ class NavBuilder {
 
         final sectionPath =
             pathPrefix.isEmpty ? '/$folderName' : '$pathPrefix/$folderName';
+        String sectionSourcePrefix = sourcePrefix.isEmpty
+            ? folderName
+            : '$sourcePrefix/$folderName';
         final sectionItems = <NavItem>[];
         final nestedSections = <NavSection>[];
 
         await _scanDirectory(
           entity,
           sectionPath,
+          sectionSourcePrefix,
           sectionItems,
           nestedSections,
         );
