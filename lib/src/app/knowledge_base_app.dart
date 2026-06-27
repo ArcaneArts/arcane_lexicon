@@ -39,7 +39,7 @@ export '../layout/kb_layout.dart' show DemoBuilder;
 /// const ArcaneStylesheet selectedStylesheet = shadcnStylesheet;
 ///
 /// void main() async {
-///   Jaspr.initializeApp(options: defaultServerOptions);
+///   Jaspr.initializeApp();
 ///   runApp(
 ///     await KnowledgeBaseApp.create(
 ///       config: const SiteConfig(
@@ -129,34 +129,20 @@ class KnowledgeBaseApp {
 
   /// Write the search index JSON file to web/search-index.json.
   ///
-  /// This runs before the jaspr build, so we need to find the web directory.
+  /// Creates the web directory when needed so search generation is explicit and
+  /// predictable for newly scaffolded projects.
   static Future<void> _writeSearchIndex(
     SiteConfig config,
     NavManifest manifest,
   ) async {
     final generator = SearchIndexGenerator(config: config, manifest: manifest);
-
     final json = generator.generate();
 
-    // Find the web directory by checking common locations
-    final possiblePaths = [
-      'web/search-index.json',
-      // When run from project root
-      '${io.Directory.current.path}/web/search-index.json',
-    ];
+    final webDirectory = io.Directory('web');
+    await webDirectory.create(recursive: true);
 
-    for (final path in possiblePaths) {
-      try {
-        final file = io.File(path);
-        // Check if the parent (web/) directory exists
-        if (await file.parent.exists()) {
-          await file.writeAsString(json);
-          return;
-        }
-      } catch (_) {
-        // Try next path
-      }
-    }
+    final file = io.File('${webDirectory.path}/search-index.json');
+    await file.writeAsString(json);
   }
 
   /// Create a synchronous ContentApp when the manifest is pre-built.
@@ -330,10 +316,7 @@ class KnowledgeBaseApp {
     if (landingSourcePath == null) {
       return const <String>{};
     }
-    return <String>{
-      'index.md',
-      landingSourcePath,
-    };
+    return <String>{'index.md', landingSourcePath};
   }
 
   static String _normalizeSourcePath(String path) {

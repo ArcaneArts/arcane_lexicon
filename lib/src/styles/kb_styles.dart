@@ -177,6 +177,15 @@ $_lightThemeReadability
   border-bottom: none;
 }
 
+.kb-topbar[data-kb-autohide="true"] {
+  transition: transform 0.25s ease;
+  will-change: transform;
+}
+
+.kb-topbar[data-kb-autohide="true"].kb-topbar--hidden {
+  transform: translateY(-100%);
+}
+
 .kb-topbar-inner {
   width: 100%;
   max-width: none;

@@ -1,30 +1,103 @@
 # Arcane Lexicon
 
-Transform markdown directories into documentation sites with Jaspr + Arcane stylesheets.
+Transform markdown directories into beautiful documentation websites with auto-generated navigation, search, theming, and rich markdown components. Built on Jaspr.
 
 **[Live Demo](https://arcanearts.github.io/arcane_lexicon/)** | **[GitHub](https://github.com/ArcaneArts/arcane_lexicon)**
 
-## Quick Start
+## Fastest Start
+
+Create a starter docs site, then drop markdown files into `content/`:
+
+```bash
+dart pub global activate --source git https://github.com/ArcaneArts/arcane_lexicon.git
+arcane_lexicon create my_docs
+cd my_docs
+dart pub get
+arcane_lexicon serve
+```
+
+During local package development, use the same flow without global activation:
+
+```bash
+dart run arcane_lexicon create my_docs
+cd my_docs
+dart pub get
+# Optional before this package is published/pushed from your working copy:
+# create a pubspec_overrides.yaml pointing arcane_lexicon at this repo.
+dart run arcane_lexicon serve
+```
+
+The generated project is intentionally small:
+
+```text
+my_docs/
+  pubspec.yaml
+  jaspr_options.yaml
+  lib/
+    main.server.dart
+    main.client.dart
+  content/
+    index.md
+    guide/
+      _section.json5
+      getting-started.md
+  web/
+    styles.css
+```
+
+Add pages by adding markdown files under `content/`. Folders become sidebar sections. `_section.json5` files customize folder titles, icons, order, and collapsed state.
+
+## CLI
+
+```bash
+arcane_lexicon create my_docs
+arcane_lexicon create docs --name "Acme Docs" --theme neon
+arcane_lexicon serve
+arcane_lexicon build --dart-define=BASE_URL=/docs
+arcane_lexicon clean
+arcane_lexicon doctor
+```
+
+### `create` Options
+
+| Option | Description |
+|---|---|
+| `--name <site name>` | Human-readable site name. Defaults to title-cased project name. |
+| `--description <text>` | Site description used in generated config/frontmatter. |
+| `--output-dir <path>` | Directory to create. Defaults to `<project_name>`. |
+| `--theme <theme>` | `shadcn`, `neon`, or `neubrutalism`. Defaults to `shadcn`. |
+| `--force` | Allow merging starter files into an existing directory. Existing files are preserved unless `--force` is set. |
+
+## Manual Setup
+
+If you prefer wiring the app yourself, add the dependency:
+
+```yaml
+dependencies:
+  jaspr: ^0.23.1
+  arcane_lexicon:
+    git:
+      url: https://github.com/ArcaneArts/arcane_lexicon
+  arcane_jaspr_shadcn:
+    git:
+      url: https://github.com/ArcaneArts/arcane_jaspr.git
+      path: packages/arcane_jaspr_shadcn
+
+dependency_overrides:
+  arcane_jaspr:
+    git:
+      url: https://github.com/ArcaneArts/arcane_jaspr.git
+```
+
+Then create a Jaspr server entrypoint:
 
 ```dart
-import 'package:arcane_jaspr_neon/arcane_jaspr_neon.dart';
-import 'package:arcane_jaspr_neubrutalism/arcane_jaspr_neubrutalism.dart';
 import 'package:arcane_jaspr_shadcn/arcane_jaspr_shadcn.dart';
 import 'package:arcane_lexicon/arcane_lexicon.dart' hide runApp;
+import 'package:jaspr/server.dart';
 
-const ArcaneStylesheet shadcnStylesheet = ShadcnStylesheet(
-  theme: ShadcnTheme.charcoal,
-);
-const ArcaneStylesheet neonStylesheet = NeonStylesheet(
-  theme: NeonTheme.green,
-);
-const ArcaneStylesheet neubrutalismStylesheet = NeubrutalismStylesheet(
-  theme: NeubrutalismTheme.yellow,
-);
-const ArcaneStylesheet selectedStylesheet = shadcnStylesheet;
-
-void main() async {
-  Jaspr.initializeApp(options: defaultServerOptions);
+Future<void> main() async {
+  Jaspr.initializeApp();
 
   runApp(
     await KnowledgeBaseApp.create(
@@ -32,40 +105,29 @@ void main() async {
         name: 'My Docs',
         contentDirectory: 'content',
       ),
-      stylesheet: selectedStylesheet,
+      stylesheet: const ShadcnStylesheet(theme: ShadcnTheme.midnight),
     ),
   );
 }
 ```
 
-## What Ships by Default
+## Content Directory Shape
 
-- Generated nav from markdown folders/files.
-- Sidebar + top/bottom navigation bar modes.
-- Breadcrumbs and footer prev/next navigation.
-- GitHub-style callout syntax with optional title.
-- Media embed syntax (`@[youtube]`, `@[video]`, `@[image]`, etc.).
-- Highlight.js code blocks with copy buttons.
-- Reading time + metadata row.
-- Optional build-time `web/search-index.json` generation.
-
-## Default Rich Markdown Components
-
-Registered through `KBRichMarkdownComponents.defaults()`:
-
-- `CardGroup`, `Card`
-- `Columns`, `Column`
-- `Tiles`, `Tile`
-- `Steps`, `Step`
-- `AccordionGroup`, `Accordion`, `Expandable`
-- `Badge`, `Banner`, `Panel`, `Frame`, `Update`
-- `Tooltip`, `Icon`, `CodeGroup`
-- `FieldGroup`, `ParamField`, `ResponseField`
-- `Tree`, `Tree.Folder`, `Tree.File`
-- `Color`, `Color.Item`
-- `View`
-- `Note`, `Tip`, `Warning`, `Info`, `Check`, `Caution`, `Important`
-- `Tabs`, `TabItem`
+```text
+content/
+  index.md
+  guide/
+    _section.json5
+    index.md
+    basics/
+      _section.json5
+      installation.md
+      configuration.md
+  reference/
+    _section.json5
+    site-config.md
+    components.md
+```
 
 ## Page Frontmatter
 
@@ -87,6 +149,18 @@ hidden: false
 ---
 ```
 
+## Section Config
+
+```json5
+{
+  title: 'Getting Started',
+  icon: 'rocket',
+  order: 1,
+  collapsed: false,
+  ignore: false,
+}
+```
+
 ## SiteConfig
 
 ```dart
@@ -105,15 +179,47 @@ SiteConfig(
 )
 ```
 
+## What Ships by Default
+
+- Generated nav from markdown folders/files.
+- Sidebar + top/bottom navigation bar modes.
+- Breadcrumbs and footer prev/next navigation.
+- GitHub-style callout syntax with optional title.
+- Media embed syntax (`@[youtube]`, `@[video]`, `@[image]`, etc.).
+- Highlight.js code blocks with copy buttons.
+- Reading time + metadata row.
+- `web/search-index.json` is generated automatically during serve/build.
+
+## Default Rich Markdown Components
+
+Registered through `KBRichMarkdownComponents.defaults()`:
+
+- `CardGroup`, `Card`
+- `Columns`, `Column`
+- `Tiles`, `Tile`
+- `Steps`, `Step`
+- `AccordionGroup`, `Accordion`, `Expandable`
+- `Badge`, `Banner`, `Panel`, `Frame`, `Update`
+- `Tooltip`, `Icon`, `CodeGroup`
+- `FieldGroup`, `ParamField`, `ResponseField`
+- `Tree`, `Tree.Folder`, `Tree.File`
+- `Color`, `Color.Item`
+- `View`
+- `Note`, `Tip`, `Warning`, `Info`, `Check`, `Caution`, `Important`
+- `Tabs`, `TabItem`
+
 ## Build
 
 ```bash
-dart tool/arcane_lexicon_demo.dart
-jaspr build
-jaspr build --define=BASE_URL=/docs
+arcane_lexicon build
+arcane_lexicon build --dart-define=BASE_URL=/docs
 ```
 
-The demo runner serves at `http://localhost:8081` and replaces any previous Arcane Lexicon demo process using that port.
+The legacy demo runner still serves the repository example at `http://localhost:8081`:
+
+```bash
+dart tool/arcane_lexicon_demo.dart
+```
 
 ## Package Docs Coverage
 
@@ -122,15 +228,6 @@ Implementation-matching docs and showcases live in:
 - `example/content/reference` (API + behavior reference)
 - `example/content/features` (visual showcase pages)
 - `example/content/guide` (workflow-oriented setup and utility usage)
-
-## Installation
-
-```yaml
-dependencies:
-  arcane_lexicon:
-    git:
-      url: https://github.com/ArcaneArts/arcane_lexicon
-```
 
 ## License
 

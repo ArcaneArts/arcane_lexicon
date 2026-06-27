@@ -556,7 +556,7 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
         ? null
         : 'kb-style-$activeStylesheetId';
     String themeIdentityClass = component.stylesheetOptions.isEmpty
-        ? component.stylesheet.themeClass
+        ? 'arcane-theme-${component.stylesheet.id}'
         : 'arcane-theme-$activeStylesheetId';
     String? paletteOptionClass = component.stylesheetOptions.isEmpty
         ? null

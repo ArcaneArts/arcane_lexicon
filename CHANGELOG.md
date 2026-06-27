@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [x.x.x]
+
+### Added
+
+- Opt-in `autoHide` on the documentation top bar (`KBTopBar` and `KnowledgeBaseRenderers.topBar`), default `false`. When enabled, the top bar hides on scroll-down and reappears on scroll-up (via a `data-kb-autohide` marker, scoped CSS, and a throttled scroll-direction handler). The default (always-visible sticky bar) is unchanged.
+
 ## [1.3.0] - 2026-03-13
 
 ### Changed

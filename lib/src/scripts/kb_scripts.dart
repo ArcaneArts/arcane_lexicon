@@ -57,6 +57,7 @@ class KBScripts {
     ${_mediaEmbeds()}
     ${_tocScrollTracking()}
     ${_backToTop()}
+    ${_topBarAutoHide()}
     ${_ratingFunctionality()}
   }
 
@@ -1601,6 +1602,47 @@ if (backToTop) {
   window.__kbBackToTopScrollHandler = scrollHandler;
   window.__kbBackToTopClickHandler = clickHandler;
   window.__kbBackToTopElement = backToTop;
+}
+''';
+
+  static String _topBarAutoHide() => '''
+// ===== TOP BAR AUTO-HIDE =====
+if (window.__kbTopBarAutoHideScrollHandler) {
+  window.removeEventListener('scroll', window.__kbTopBarAutoHideScrollHandler);
+  window.__kbTopBarAutoHideScrollHandler = null;
+}
+
+var autoHideTopBar = document.querySelector('.kb-topbar[data-kb-autohide="true"]');
+if (autoHideTopBar) {
+  var autoHideThreshold = 80;
+  var autoHideLastY = window.scrollY || window.pageYOffset || 0;
+  var autoHideTicking = false;
+
+  var updateAutoHide = function() {
+    autoHideTicking = false;
+    var currentY = window.scrollY || window.pageYOffset || 0;
+    if (currentY <= autoHideThreshold) {
+      autoHideTopBar.classList.remove('kb-topbar--hidden');
+    } else if (currentY > autoHideLastY) {
+      autoHideTopBar.classList.add('kb-topbar--hidden');
+    } else if (currentY < autoHideLastY) {
+      autoHideTopBar.classList.remove('kb-topbar--hidden');
+    }
+    autoHideLastY = currentY;
+  };
+
+  var autoHideScrollHandler = function() {
+    if (autoHideTicking) return;
+    autoHideTicking = true;
+    if (window.requestAnimationFrame) {
+      window.requestAnimationFrame(updateAutoHide);
+    } else {
+      updateAutoHide();
+    }
+  };
+
+  window.addEventListener('scroll', autoHideScrollHandler, { passive: true });
+  window.__kbTopBarAutoHideScrollHandler = autoHideScrollHandler;
 }
 ''';
 

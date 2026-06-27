@@ -12,6 +12,7 @@ class KBTopBar extends StatelessWidget {
   final String activePaletteId;
   final bool bottom;
   final bool showBranding;
+  final bool autoHide;
 
   const KBTopBar({
     required this.config,
@@ -21,6 +22,7 @@ class KBTopBar extends StatelessWidget {
     this.activePaletteId = '',
     this.bottom = false,
     this.showBranding = true,
+    this.autoHide = false,
   });
 
   @override
@@ -30,66 +32,72 @@ class KBTopBar extends StatelessWidget {
         config.stylesheetSwitcherEnabled && stylesheetOptions.length > 1;
     bool showPaletteSwitcher =
         config.paletteSwitcherEnabled && _activePalettes().length > 1;
-    return div(classes: 'kb-topbar$positionClass', [
-      div(classes: 'kb-topbar-inner', [
-        div(classes: 'kb-topbar-left', [
-          button(
-            classes: 'kb-hamburger',
-            attributes: const <String, String>{
-              'type': 'button',
-              'aria-label': 'Toggle sidebar',
-            },
-            [ArcaneIcon.panelLeft(size: IconSize.sm)],
-          ),
-          if (showBranding)
-            a(href: config.fullPath('/'), classes: 'kb-topbar-brand', [
-              if (config.logo != null)
-                img(
-                  classes: 'kb-topbar-logo',
-                  src: _resolveLogoPath(config.logo!),
-                  alt: '',
-                )
-              else
-                span(classes: 'kb-topbar-brand-icon', [
-                  Widget.text(_brandInitial()),
-                ]),
-              span(classes: 'kb-topbar-brand-label', [
-                Widget.text(config.name),
-              ]),
-            ]),
-          if (config.headerLinks.isNotEmpty)
-            nav(classes: 'kb-topbar-nav', [
-              for (NavLink link in config.headerLinks) _buildHeaderLink(link),
-            ]),
-        ]),
-        div(classes: 'kb-topbar-right', [
-          if (config.searchEnabled) _buildSearch(),
-          if (showStylesheetSwitcher || showPaletteSwitcher)
-            div(classes: 'kb-style-switcher', [
-              if (showStylesheetSwitcher) _buildStylesheetSelect(),
-              if (showPaletteSwitcher) _buildPaletteSelect(),
-            ]),
-          if (config.themeToggleEnabled)
+    return div(
+      classes: 'kb-topbar$positionClass',
+      attributes: autoHide
+          ? const <String, String>{'data-kb-autohide': 'true'}
+          : null,
+      [
+        div(classes: 'kb-topbar-inner', [
+          div(classes: 'kb-topbar-left', [
             button(
-              id: 'theme-toggle',
-              classes: 'kb-theme-toggle',
+              classes: 'kb-hamburger',
               attributes: const <String, String>{
                 'type': 'button',
-                'aria-label': 'Toggle theme',
+                'aria-label': 'Toggle sidebar',
               },
-              [
-                span(classes: 'theme-icon-light', [
-                  ArcaneIcon.sun(size: IconSize.sm),
-                ]),
-                span(classes: 'theme-icon-dark', [
-                  ArcaneIcon.moon(size: IconSize.sm),
-                ]),
-              ],
+              [ArcaneIcon.panelLeft(size: IconSize.sm)],
             ),
-          if (config.githubUrl != null) _buildGithubLink(config.githubUrl!),
+            if (showBranding)
+              a(href: config.fullPath('/'), classes: 'kb-topbar-brand', [
+                if (config.logo != null)
+                  img(
+                    classes: 'kb-topbar-logo',
+                    src: _resolveLogoPath(config.logo!),
+                    alt: '',
+                  )
+                else
+                  span(classes: 'kb-topbar-brand-icon', [
+                    Widget.text(_brandInitial()),
+                  ]),
+                span(classes: 'kb-topbar-brand-label', [
+                  Widget.text(config.name),
+                ]),
+              ]),
+            if (config.headerLinks.isNotEmpty)
+              nav(classes: 'kb-topbar-nav', [
+                for (NavLink link in config.headerLinks) _buildHeaderLink(link),
+              ]),
+          ]),
+          div(classes: 'kb-topbar-right', [
+            if (config.searchEnabled) _buildSearch(),
+            if (showStylesheetSwitcher || showPaletteSwitcher)
+              div(classes: 'kb-style-switcher', [
+                if (showStylesheetSwitcher) _buildStylesheetSelect(),
+                if (showPaletteSwitcher) _buildPaletteSelect(),
+              ]),
+            if (config.themeToggleEnabled)
+              button(
+                id: 'theme-toggle',
+                classes: 'kb-theme-toggle',
+                attributes: const <String, String>{
+                  'type': 'button',
+                  'aria-label': 'Toggle theme',
+                },
+                [
+                  span(classes: 'theme-icon-light', [
+                    ArcaneIcon.sun(size: IconSize.sm),
+                  ]),
+                  span(classes: 'theme-icon-dark', [
+                    ArcaneIcon.moon(size: IconSize.sm),
+                  ]),
+                ],
+              ),
+            if (config.githubUrl != null) _buildGithubLink(config.githubUrl!),
+          ]),
         ]),
-      ]),
-    ]);
+      ],
+    );
   }
 
   Widget _buildHeaderLink(NavLink link) {

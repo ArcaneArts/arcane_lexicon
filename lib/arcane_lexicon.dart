@@ -24,7 +24,7 @@
 /// const ArcaneStylesheet selectedStylesheet = shadcnStylesheet;
 ///
 /// void main() async {
-///   Jaspr.initializeApp(options: defaultServerOptions);
+///   Jaspr.initializeApp();
 ///   runApp(
 ///     await KnowledgeBaseApp.create(
 ///       config: const SiteConfig(

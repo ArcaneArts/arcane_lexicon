@@ -73,6 +73,7 @@ abstract class KnowledgeBaseRenderers {
     KnowledgeBaseRenderData data, {
     required bool bottom,
     required bool showBranding,
+    bool autoHide = false,
   });
 
   Widget sidebar(
@@ -169,6 +170,7 @@ class DefaultKnowledgeBaseRenderers extends KnowledgeBaseRenderers {
     KnowledgeBaseRenderData data, {
     required bool bottom,
     required bool showBranding,
+    bool autoHide = false,
   }) {
     String positionClass = bottom ? ' kb-topbar-bottom' : '';
     bool showStylesheetSwitcher =
@@ -176,35 +178,42 @@ class DefaultKnowledgeBaseRenderers extends KnowledgeBaseRenderers {
         data.stylesheetOptions.length > 1;
     bool showPaletteSwitcher =
         data.config.paletteSwitcherEnabled && activePalettes(data).length > 1;
-    return dom.div(classes: '$topBarClass$positionClass', <Widget>[
-      dom.div(classes: 'kb-topbar-inner $prefix-kb-topbar-inner', <Widget>[
-        dom.div(classes: 'kb-topbar-left $prefix-kb-topbar-left', <Widget>[
-          dom.button(
-            classes: 'kb-hamburger $prefix-kb-hamburger',
-            attributes: const <String, String>{
-              'type': 'button',
-              'aria-label': 'Toggle sidebar',
-              'data-kb-sidebar-toggle': 'true',
-            },
-            <Widget>[ArcaneIcon.panelLeft(size: IconSize.sm)],
-          ),
-          if (showBranding) brandLink(data, topBar: true),
-        ]),
-        dom.div(classes: 'kb-topbar-right $prefix-kb-topbar-right', <Widget>[
-          if (data.config.searchEnabled) searchBox(),
-          if (showStylesheetSwitcher || showPaletteSwitcher)
-            dom.div(
-              classes: 'kb-style-switcher $prefix-kb-style-switcher',
-              <Widget>[
-                if (showStylesheetSwitcher) stylesheetSelect(data),
-                if (showPaletteSwitcher) paletteSelect(data),
-              ],
+    return dom.div(
+      classes: '$topBarClass$positionClass',
+      attributes: autoHide
+          ? const <String, String>{'data-kb-autohide': 'true'}
+          : null,
+      <Widget>[
+        dom.div(classes: 'kb-topbar-inner $prefix-kb-topbar-inner', <Widget>[
+          dom.div(classes: 'kb-topbar-left $prefix-kb-topbar-left', <Widget>[
+            dom.button(
+              classes: 'kb-hamburger $prefix-kb-hamburger',
+              attributes: const <String, String>{
+                'type': 'button',
+                'aria-label': 'Toggle sidebar',
+                'data-kb-sidebar-toggle': 'true',
+              },
+              <Widget>[ArcaneIcon.panelLeft(size: IconSize.sm)],
             ),
-          if (data.config.themeToggleEnabled) themeToggle(),
-          if (data.config.githubUrl != null) githubLink(data.config.githubUrl!),
+            if (showBranding) brandLink(data, topBar: true),
+          ]),
+          dom.div(classes: 'kb-topbar-right $prefix-kb-topbar-right', <Widget>[
+            if (data.config.searchEnabled) searchBox(),
+            if (showStylesheetSwitcher || showPaletteSwitcher)
+              dom.div(
+                classes: 'kb-style-switcher $prefix-kb-style-switcher',
+                <Widget>[
+                  if (showStylesheetSwitcher) stylesheetSelect(data),
+                  if (showPaletteSwitcher) paletteSelect(data),
+                ],
+              ),
+            if (data.config.themeToggleEnabled) themeToggle(),
+            if (data.config.githubUrl != null)
+              githubLink(data.config.githubUrl!),
+          ]),
         ]),
-      ]),
-    ]);
+      ],
+    );
   }
 
   Widget brandLink(KnowledgeBaseRenderData data, {required bool topBar}) {
