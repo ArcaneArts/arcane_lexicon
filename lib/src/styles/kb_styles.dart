@@ -42,6 +42,7 @@ $_treeStyles
 $_colorStyles
 $_viewStyles
 $_landingStyles
+$_contentThemeBridge
 $_lightThemeReadability
 ''';
 
@@ -2650,6 +2651,29 @@ a.kb-banner:hover {
   .kb-landing-hero p {
     font-size: 1rem;
   }
+}
+''';
+
+  static const String _contentThemeBridge = '''
+#arcane-root {
+  --text: var(--foreground);
+  --content-headings: var(--foreground);
+  --content-lead: var(--muted-foreground);
+  --content-links: var(--primary);
+  --content-bold: var(--foreground);
+  --content-counters: color-mix(in srgb, var(--muted-foreground) 82%, var(--foreground));
+  --content-bullets: color-mix(in srgb, var(--muted-foreground) 76%, transparent);
+  --content-hr: var(--border);
+  --content-quotes: var(--foreground);
+  --content-quote-borders: var(--border);
+  --content-captions: var(--muted-foreground);
+  --content-kbd: var(--foreground);
+  --content-kbd-shadows: color-mix(in srgb, var(--foreground) 36%, transparent);
+  --content-code: var(--foreground);
+  --content-pre-code: var(--foreground);
+  --content-pre-bg: color-mix(in srgb, var(--card) 88%, var(--background));
+  --content-th-borders: var(--border);
+  --content-td-borders: var(--border);
 }
 ''';
 

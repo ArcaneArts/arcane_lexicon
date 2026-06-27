@@ -152,6 +152,7 @@ class KBScripts {
     root.classList.remove('dark', 'light');
     root.classList.add(mode === 'dark' ? 'dark' : 'light');
     stylesheetOptions.forEach(function(option) {
+      root.classList.remove('arcane-theme-' + option.id);
       root.classList.remove('kb-style-' + option.id);
       if (option.bodyClass) root.classList.remove(option.bodyClass);
       (option.palettes || []).forEach(function(palette) {
@@ -161,11 +162,14 @@ class KBScripts {
     });
     var current = activeStylesheet();
     if (current) {
+      root.classList.add('arcane-theme-' + current.id);
+      root.setAttribute('data-arcane-theme', current.id);
       root.classList.add('kb-style-' + current.id);
       if (current.bodyClass) root.classList.add(current.bodyClass);
       var palettes = current.palettes || [];
       for (var i = 0; i < palettes.length; i++) {
         if (palettes[i].id === paletteId) {
+          root.setAttribute('data-arcane-palette', palettes[i].id);
           root.classList.add('kb-palette-' + palettes[i].id);
           if (palettes[i].bodyClass) root.classList.add(palettes[i].bodyClass);
           break;
@@ -307,6 +311,7 @@ function updateStylesheetClasses() {
   var root = document.getElementById('arcane-root');
   options.forEach(function(option) {
     if (root) {
+      root.classList.remove('arcane-theme-' + option.id);
       root.classList.remove('kb-style-' + option.id);
       if (option.bodyClass) root.classList.remove(option.bodyClass);
     }
@@ -332,11 +337,14 @@ function updateStylesheetClasses() {
   if (root) {
     var current = getStylesheetOption(stylesheetId);
     if (current) {
+      root.classList.add('arcane-theme-' + current.id);
+      root.setAttribute('data-arcane-theme', current.id);
       root.classList.add('kb-style-' + current.id);
       if (current.bodyClass) root.classList.add(current.bodyClass);
       var palettes = current.palettes || [];
       for (var i = 0; i < palettes.length; i++) {
         if (palettes[i].id === paletteId) {
+          root.setAttribute('data-arcane-palette', palettes[i].id);
           root.classList.add('kb-palette-' + palettes[i].id);
           if (palettes[i].bodyClass) root.classList.add(palettes[i].bodyClass);
           break;
@@ -512,6 +520,29 @@ document.addEventListener('change', function(e) {
     return search ? search.querySelector('[data-kb-search-results], .search-results') : null;
   }
 
+  function commandDrawerForInput(input) {
+    return input.closest('[data-kb-command-drawer]');
+  }
+
+  function openCommandDrawer(input) {
+    var drawer = commandDrawerForInput(input);
+    if (drawer) drawer.open = true;
+  }
+
+  function closeCommandDrawer(input) {
+    var drawer = commandDrawerForInput(input);
+    if (drawer) drawer.open = false;
+  }
+
+  function closeOpenCommandDrawers(scope) {
+    var closed = false;
+    scope.querySelectorAll('[data-kb-command-drawer][open]').forEach(function(drawer) {
+      drawer.open = false;
+      closed = true;
+    });
+    return closed;
+  }
+
   function buildSearchIndex(scope) {
     var searchIndex = [];
     scope.querySelectorAll('.sidebar-link').forEach(function(link) {
@@ -667,6 +698,7 @@ document.addEventListener('change', function(e) {
         e.preventDefault();
         e.stopPropagation();
         hideResults(this);
+        closeCommandDrawer(this);
         this.blur();
         return;
       }
@@ -721,22 +753,33 @@ document.addEventListener('change', function(e) {
     var key = e.key;
 
     if (key === 'Escape') {
+      var activeScope = getActiveKbSlot();
+      var closedDrawer = closeOpenCommandDrawers(activeScope);
       document.querySelectorAll('[data-kb-search-input], #kb-search').forEach(function(input) {
         if (isResultsVisible(input)) {
           e.preventDefault();
           e.stopPropagation();
           hideResults(input);
+          closeCommandDrawer(input);
           input.blur();
         }
       });
+      if (closedDrawer) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
     }
 
-    if ((e.metaKey || e.ctrlKey) && key === 'k') {
+    if ((e.metaKey || e.ctrlKey) && key.toLowerCase() === 'k') {
       e.preventDefault();
       e.stopPropagation();
       var scope = getActiveKbSlot();
-      var input = scope.querySelector('[data-kb-search-input], #kb-search');
+      var input = scope.querySelector('[data-kb-command-drawer] [data-kb-search-input], [data-kb-command-drawer] #kb-search');
+      if (!input) {
+        input = scope.querySelector('[data-kb-search-input], #kb-search');
+      }
       if (input) {
+        openCommandDrawer(input);
         input.focus();
         input.select();
       }
@@ -849,13 +892,25 @@ document.addEventListener('change', function(e) {
     var currentPath = normalizePath(current.pathname);
 
     if (destinationPath === currentPath && destination.search === current.search) {
-      if (destination.hash && destination.hash !== current.hash) {
-        var hashTarget = document.getElementById(destination.hash.substring(1));
+      if (destination.hash) {
+        if (pushHistory && destination.href !== window.location.href) {
+          history.pushState({ href: destination.href }, '', destination.href);
+        }
+        var hashId = destination.hash.substring(1);
+        try {
+          hashId = decodeURIComponent(hashId);
+        } catch (_) {}
+        var hashTarget = document.getElementById(hashId);
         if (hashTarget) {
-          hashTarget.scrollIntoView();
+          hashTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (window.__kbInitializePage) {
+            window.__kbInitializePage();
+          }
         } else {
           window.location.hash = destination.hash;
         }
+      } else if (pushHistory && destination.href !== window.location.href) {
+        history.pushState({ href: destination.href }, '', destination.href);
       }
       return;
     }
@@ -955,7 +1010,13 @@ document.addEventListener('change', function(e) {
     if (targetAttr && targetAttr !== '_self') return;
 
     var href = link.getAttribute('href');
-    if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+    if (!href || href.startsWith('javascript:')) return;
+
+    if (href.startsWith('#')) {
+      e.preventDefault();
+      navigateTo(window.location.pathname + window.location.search + href, true);
+      return;
+    }
 
     var destination = new URL(href, window.location.origin);
     if (!isNavigableUrl(destination)) return;

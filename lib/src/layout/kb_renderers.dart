@@ -860,6 +860,227 @@ class NeonKnowledgeBaseRenderers extends DefaultKnowledgeBaseRenderers {
   @override
   bool showTopBarBranding(KnowledgeBaseRenderData data) =>
       data.showNavigationBar && data.useTopPosition;
+
+  @override
+  Widget shell(KnowledgeBaseRenderData data) {
+    return dom.div(classes: shellClass, <Widget>[
+      dom.div(classes: scaffoldClass, <Widget>[
+        neonMobileDock(data),
+        dom.div(
+          classes: 'kb-layout-body $prefix-kb-layout-body neon-kb-stage',
+          <Widget>[
+            dom.div(classes: 'neon-kb-nav-rail', <Widget>[
+              sidebar(
+                data,
+                showBranding: true,
+                showSearch: false,
+                showThemeToggle: false,
+              ),
+            ]),
+            mainArea(
+              data,
+              contentArea(
+                data,
+                mainContent: articlePanel(data),
+                toc: data.config.tocEnabled && hasTableOfContents(data)
+                    ? tableOfContents(data)
+                    : null,
+              ),
+            ),
+          ],
+        ),
+      ]),
+    ]);
+  }
+
+  Widget neonMobileDock(KnowledgeBaseRenderData data) =>
+      dom.div(classes: 'neon-kb-mobile-dock', <Widget>[
+        dom.button(
+          classes: 'kb-hamburger neon-kb-mobile-menu',
+          attributes: const <String, String>{
+            'type': 'button',
+            'aria-label': 'Toggle sidebar',
+            'data-kb-sidebar-toggle': 'true',
+          },
+          <Widget>[ArcaneIcon.panelLeft(size: IconSize.sm)],
+        ),
+        brandLink(data, topBar: true),
+        dom.div(classes: 'neon-kb-mobile-actions', <Widget>[
+          if (data.config.themeToggleEnabled) themeToggle(),
+          if (data.config.githubUrl != null) githubLink(data.config.githubUrl!),
+        ]),
+      ]);
+
+  @override
+  Widget mainArea(KnowledgeBaseRenderData data, Widget contentArea) =>
+      dom.main_(
+        classes: 'kb-main-area $prefix-kb-main-area neon-kb-main-frame',
+        <Widget>[contentArea],
+      );
+
+  @override
+  Widget sidebar(
+    KnowledgeBaseRenderData data, {
+    required bool showBranding,
+    required bool showSearch,
+    required bool showThemeToggle,
+  }) {
+    bool showStylesheetSwitcher =
+        data.showSidebarControls &&
+        data.config.stylesheetSwitcherEnabled &&
+        data.stylesheetOptions.length > 1;
+    bool showPaletteSwitcher =
+        data.showSidebarControls &&
+        data.config.paletteSwitcherEnabled &&
+        activePalettes(data).length > 1;
+    bool hasControls =
+        showSearch ||
+        showThemeToggle ||
+        showStylesheetSwitcher ||
+        showPaletteSwitcher;
+    return dom.aside(
+      classes: sidebarClass,
+      styles: dom.Styles(
+        raw: <String, String>{
+          '--kb-sidebar-width': data.config.sidebarWidth,
+          '--kb-sidebar-rail-top': '0px',
+        },
+      ),
+      <Widget>[
+        dom.div(classes: 'kb-sidebar-panel $prefix-kb-sidebar-panel', <Widget>[
+          neonSidebarHeader(data, showBranding: showBranding),
+          if (hasControls)
+            dom.div(classes: 'neon-kb-sidebar-quick-controls', <Widget>[
+              if (showSearch) searchBox(),
+              if (showStylesheetSwitcher || showPaletteSwitcher)
+                dom.div(
+                  classes: 'kb-style-switcher $prefix-kb-style-switcher',
+                  <Widget>[
+                    if (showStylesheetSwitcher) stylesheetSelect(data),
+                    if (showPaletteSwitcher) paletteSelect(data),
+                  ],
+                ),
+              if (showThemeToggle) themeToggle(),
+            ]),
+          dom.nav(classes: 'sidebar-nav $prefix-kb-sidebar-nav', <Widget>[
+            if (data.manifest.visibleItems.isNotEmpty)
+              fixedSection(
+                data,
+                'Pages',
+                KBIcon.build('file-text', classes: 'sidebar-icon'),
+                <Widget>[
+                  for (NavItem item in data.manifest.visibleItems)
+                    navItem(data, item),
+                ],
+              ),
+            for (NavSection section in data.manifest.sortedSections)
+              collapsibleSection(data, section, depth: 0),
+          ]),
+        ]),
+      ],
+    );
+  }
+
+  Widget neonSidebarHeader(
+    KnowledgeBaseRenderData data, {
+    required bool showBranding,
+  }) {
+    if (!showBranding) {
+      return const dom.div(classes: 'neon-kb-nav-head', <Widget>[]);
+    }
+    return dom.div(classes: 'neon-kb-nav-head', <Widget>[
+      dom.a(
+        href: data.config.fullPath('/'),
+        classes: 'neon-kb-nav-brand',
+        <Widget>[
+          dom.span(classes: 'neon-kb-brand-glyph', <Widget>[
+            Widget.text(brandInitial(data.config.name)),
+          ]),
+          dom.span(classes: 'neon-kb-brand-stack', <Widget>[
+            dom.span(classes: 'neon-kb-brand-name', <Widget>[
+              Widget.text(data.config.name),
+            ]),
+            const dom.span(classes: 'neon-kb-brand-code', <Widget>[
+              Text('DOCS // NEON'),
+            ]),
+          ]),
+        ],
+      ),
+    ]);
+  }
+
+  @override
+  Widget contentArea(
+    KnowledgeBaseRenderData data, {
+    required Widget mainContent,
+    required Widget? toc,
+  }) {
+    String landingClass = data.landing ? ' kb-landing-content-area' : '';
+    Widget? commandDrawer = neonCommandDrawer(data);
+    return dom.div(
+      classes: '$contentAreaClass$landingClass neon-kb-content-area',
+      <Widget>[
+        if (commandDrawer != null)
+          dom.div(classes: 'neon-kb-command-layer', <Widget>[commandDrawer]),
+        dom.div(classes: 'neon-kb-article-lane', <Widget>[
+          dom.div(classes: 'neon-kb-content-stack', <Widget>[mainContent]),
+        ]),
+        if (toc != null)
+          dom.aside(classes: 'neon-kb-route-index neon-kb-right-rail', <Widget>[
+            toc,
+          ]),
+      ],
+    );
+  }
+
+  Widget? neonCommandDrawer(KnowledgeBaseRenderData data) {
+    bool showStylesheetSwitcher =
+        data.config.stylesheetSwitcherEnabled &&
+        data.stylesheetOptions.length > 1;
+    bool showPaletteSwitcher =
+        data.config.paletteSwitcherEnabled && activePalettes(data).length > 1;
+    bool showControls =
+        showStylesheetSwitcher ||
+        showPaletteSwitcher ||
+        data.config.themeToggleEnabled ||
+        data.config.githubUrl != null;
+    if (!data.config.searchEnabled && !showControls) {
+      return null;
+    }
+    return dom.div(
+      classes: 'neon-kb-command-drawer',
+      attributes: const <String, String>{'data-kb-command-drawer': 'true'},
+      <Widget>[
+        if (showStylesheetSwitcher || showPaletteSwitcher)
+          dom.div(
+            classes: 'neon-kb-floating-controls neon-kb-floating-controls-left',
+            <Widget>[
+              dom.div(
+                classes: 'kb-style-switcher $prefix-kb-style-switcher',
+                <Widget>[
+                  if (showStylesheetSwitcher) stylesheetSelect(data),
+                  if (showPaletteSwitcher) paletteSelect(data),
+                ],
+              ),
+            ],
+          ),
+        if (data.config.searchEnabled)
+          dom.div(classes: 'neon-kb-floating-search', <Widget>[searchBox()]),
+        if (data.config.themeToggleEnabled || data.config.githubUrl != null)
+          dom.div(
+            classes:
+                'neon-kb-floating-controls neon-kb-floating-controls-right',
+            <Widget>[
+              dom.div(classes: 'neon-kb-command-actions', <Widget>[
+                if (data.config.themeToggleEnabled) themeToggle(),
+                if (data.config.githubUrl != null)
+                  githubLink(data.config.githubUrl!),
+              ]),
+            ],
+          ),
+      ],
+    );
+  }
 }
 
 class NeubrutalismKnowledgeBaseRenderers extends DefaultKnowledgeBaseRenderers {

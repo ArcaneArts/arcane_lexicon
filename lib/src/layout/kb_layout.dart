@@ -555,11 +555,15 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
     String? stylesheetOptionClass = component.stylesheetOptions.isEmpty
         ? null
         : 'kb-style-$activeStylesheetId';
+    String themeIdentityClass = component.stylesheetOptions.isEmpty
+        ? component.stylesheet.themeClass
+        : 'arcane-theme-$activeStylesheetId';
     String? paletteOptionClass = component.stylesheetOptions.isEmpty
         ? null
         : 'kb-palette-$activePaletteId';
     String rootClasses = [
       themeClass,
+      themeIdentityClass,
       stylesheetOptionClass,
       paletteOptionClass,
       stylesheetClass,
@@ -577,6 +581,13 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
           textColor: TextColor.primary,
           fontFamily: FontFamily.sans,
         ),
+        attributes: <String, String>{
+          'data-arcane-theme': activeStylesheetId.isEmpty
+              ? component.stylesheet.id
+              : activeStylesheetId,
+          if (activePaletteId.isNotEmpty)
+            'data-arcane-palette': activePaletteId,
+        },
         children: [..._buildStyleSlots(activeStylesheetId), ..._buildScripts()],
       ),
     );
