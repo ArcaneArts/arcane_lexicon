@@ -7,9 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [x.x.x]
 
+### Fixed
+
+- Single-stylesheet knowledge bases (those passing only `stylesheet:` to `KnowledgeBaseApp.create`, with no `stylesheetOptions`) rendered a completely blank page. The style-slot system synthesizes one slot with id `default`, but the active-slot id resolved to `''` on both the server (`KBLayout`) and the client runtime (`_fallbackStylesheetId`), so no slot ever matched and every slot stayed `display:none`/`hidden`. A single synthesized slot is now always active server-side, and the client fallback id is `default`, so single-theme docs render correctly. Multi-stylesheet sites are unaffected.
+- `DefaultKnowledgeBaseRenderers.showTopBarBranding` returned a hardcoded `false`, so KBs using the default renderers (e.g. single-stylesheet apps) left the top bar's left side empty (only a desktop-hidden hamburger) and pushed the brand into the sidebar. It now returns `data.showNavigationBar && data.useTopPosition` (matching the shadcn/neon/neubrutalism renderers), so the brand renders top-left in the standard position when the nav bar is top-positioned.
+
 ### Added
 
 - Opt-in `autoHide` on the documentation top bar (`KBTopBar` and `KnowledgeBaseRenderers.topBar`), default `false`. When enabled, the top bar hides on scroll-down and reappears on scroll-up (via a `data-kb-autohide` marker, scoped CSS, and a throttled scroll-direction handler). The default (always-visible sticky bar) is unchanged.
+
+### Changed
+
+- `NeonKnowledgeBaseRenderers` simplified to use the standard `DefaultKnowledgeBaseRenderers` docs chrome (top bar / sidebar / content), matching `ShadcnKnowledgeBaseRenderers`. Removed the bespoke `shell`/`neonMobileDock`/rail/stage/command-drawer overrides (the `neon-kb-nav-rail`, `neon-kb-stage`, `neon-kb-mobile-dock`, etc. layout) whose styling had been retired, so the Neon docs no longer render an unstyled, collapsed chrome. The Neon theme now styles the standard `kb-*` chrome.
 
 ## [1.3.0] - 2026-03-13
 

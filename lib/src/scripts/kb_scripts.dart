@@ -497,7 +497,9 @@ document.addEventListener('change', function(e) {
       return defaultStylesheetId;
     }
     if (stylesheetOptions.isEmpty) {
-      return '';
+      // Single-stylesheet apps render one synthesized slot with id 'default';
+      // the client must select it so the slot stays visible.
+      return 'default';
     }
     return stylesheetOptions.first.id;
   }

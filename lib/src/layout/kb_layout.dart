@@ -596,7 +596,10 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
   Iterable<Widget> _buildStyleSlots(String activeStylesheetId) sync* {
     List<KBStylesheetOption> options = _effectiveStylesheetOptions();
     for (KBStylesheetOption option in options) {
-      bool active = option.id == activeStylesheetId;
+      // A single-stylesheet app has no switcher and an empty activeStylesheetId,
+      // so its one synthesized slot must always be active (otherwise the whole
+      // page renders hidden).
+      bool active = options.length == 1 || option.id == activeStylesheetId;
       KnowledgeBaseRenderers renderers =
           option.knowledgeBaseRenderers ?? _defaultRenderersFor(option.id);
       ArcaneStylesheet slotStylesheet = option.stylesheet;
