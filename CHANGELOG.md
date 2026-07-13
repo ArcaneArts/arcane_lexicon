@@ -18,7 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **ArcaneJaspr typed `classes` compatibility.** Updated for `arcane_jaspr`'s wrapper widgets (`ArcaneDiv`/`ArcaneSpan`/`ArcaneParagraph`/`ArcaneHeading`/`ArcaneLink`/…) now taking `classes: List<String>?` instead of `String?`. Every internal `classes:` argument across the layout (`kb_page_nav`, `kb_changelog`, `kb_related_pages`, `kb_rating`, `kb_layout`) and rich-markdown components now passes a single-element list, so the rendered `class="..."` output is byte-identical. Requires the corresponding `arcane_jaspr` release; bump the `arcane_jaspr` constraint once it is published.
 - `NeonKnowledgeBaseRenderers` simplified to use the standard `DefaultKnowledgeBaseRenderers` docs chrome (top bar / sidebar / content), matching `ShadcnKnowledgeBaseRenderers`. Removed the bespoke `shell`/`neonMobileDock`/rail/stage/command-drawer overrides (the `neon-kb-nav-rail`, `neon-kb-stage`, `neon-kb-mobile-dock`, etc. layout) whose styling had been retired, so the Neon docs no longer render an unstyled, collapsed chrome. The Neon theme now styles the standard `kb-*` chrome.
+
+### Removed
+
+- Theme-specific `KnowledgeBaseRenderers` (`ShadcnKnowledgeBaseRenderers`, `NeonKnowledgeBaseRenderers`, `NeubrutalismKnowledgeBaseRenderers`, `Win95KnowledgeBaseRenderers`) moved out of lexicon into their respective `arcane_jaspr` theme packages, which now depend on `arcane_lexicon` and extend the exported `DefaultKnowledgeBaseRenderers`. Consumers pass them explicitly via `KBStylesheetOption.knowledgeBaseRenderers`. The internal `_defaultRenderersFor` id-switch (which auto-resolved `shadcn`/`neon`/`neubrutalism`) is gone; a stylesheet option without an explicit renderer now falls back to `DefaultKnowledgeBaseRenderers`.
 
 ## [1.3.0] - 2026-03-13
 

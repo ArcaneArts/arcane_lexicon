@@ -55,7 +55,7 @@ class KBPageNav extends StatelessWidget {
     }
 
     return ArcaneDiv(
-      classes: 'kb-page-nav',
+      classes: <String>['kb-page-nav'],
       styles: const ArcaneStyleData(
         display: Display.flex,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -69,7 +69,7 @@ class KBPageNav extends StatelessWidget {
         if (prevPage != null)
           ArcaneLink(
             href: config.fullPath(prevPage.path),
-            classes: 'kb-page-nav-link kb-page-nav-prev',
+            classes: <String>['kb-page-nav-link kb-page-nav-prev'],
             styles: const ArcaneStyleData(
               display: Display.flex,
               flexDirection: FlexDirection.column,
@@ -109,7 +109,7 @@ class KBPageNav extends StatelessWidget {
           )
         else
           const ArcaneDiv(
-            classes: 'kb-page-nav-spacer',
+            classes: <String>['kb-page-nav-spacer'],
             styles: ArcaneStyleData(flex: FlexPreset.expand),
             children: [],
           ),
@@ -118,7 +118,7 @@ class KBPageNav extends StatelessWidget {
         if (nextPage != null)
           ArcaneLink(
             href: config.fullPath(nextPage.path),
-            classes: 'kb-page-nav-link kb-page-nav-next',
+            classes: <String>['kb-page-nav-link kb-page-nav-next'],
             styles: const ArcaneStyleData(
               display: Display.flex,
               flexDirection: FlexDirection.column,
@@ -161,7 +161,7 @@ class KBPageNav extends StatelessWidget {
           )
         else
           const ArcaneDiv(
-            classes: 'kb-page-nav-spacer',
+            classes: <String>['kb-page-nav-spacer'],
             styles: ArcaneStyleData(flex: FlexPreset.expand),
             children: [],
           ),
@@ -229,11 +229,11 @@ class KBSubpages extends StatelessWidget {
     }
 
     return ArcaneDiv(
-      classes: 'kb-subpages',
+      classes: <String>['kb-subpages'],
       styles: const ArcaneStyleData(margin: MarginPreset.bottomXl),
       children: [
         const ArcaneDiv(
-          classes: 'kb-subpages-title',
+          classes: <String>['kb-subpages-title'],
           styles: ArcaneStyleData(
             fontWeight: FontWeight.w600,
             fontSize: FontSize.sm,
@@ -243,14 +243,14 @@ class KBSubpages extends StatelessWidget {
           children: [Text('In this section')],
         ),
         ArcaneDiv(
-          classes: 'kb-subpages-grid',
+          classes: <String>['kb-subpages-grid'],
           styles: const ArcaneStyleData(display: Display.grid, gap: Gap.md),
           children: [
             // Child pages
             ...subpages.map(
               (NavItem item) => ArcaneLink(
                 href: config.fullPath(item.path),
-                classes: 'kb-subpage-card',
+                classes: <String>['kb-subpage-card'],
                 styles: const ArcaneStyleData(
                   display: Display.flex,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -308,7 +308,7 @@ class KBSubpages extends StatelessWidget {
             ...subsections.map(
               (NavSection section) => ArcaneLink(
                 href: config.fullPath(section.path),
-                classes: 'kb-subpage-card kb-subpage-section',
+                classes: <String>['kb-subpage-card kb-subpage-section'],
                 styles: const ArcaneStyleData(
                   display: Display.flex,
                   crossAxisAlignment: CrossAxisAlignment.center,

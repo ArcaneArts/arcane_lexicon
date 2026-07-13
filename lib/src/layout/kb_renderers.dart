@@ -849,34 +849,3 @@ class DefaultKnowledgeBaseRenderers extends KnowledgeBaseRenderers {
     }
   }
 }
-
-class ShadcnKnowledgeBaseRenderers extends DefaultKnowledgeBaseRenderers {
-  const ShadcnKnowledgeBaseRenderers() : super(id: 'shadcn', prefix: 'shadcn');
-
-  @override
-  String get topBarClass => 'kb-topbar shadcn-kb-topbar shadcn-kb-topbar-owned';
-
-  @override
-  bool showTopBarBranding(KnowledgeBaseRenderData data) =>
-      data.showNavigationBar && data.useTopPosition;
-}
-
-class NeonKnowledgeBaseRenderers extends DefaultKnowledgeBaseRenderers {
-  const NeonKnowledgeBaseRenderers() : super(id: 'neon', prefix: 'neon');
-
-  @override
-  String get topBarClass => 'kb-topbar neon-kb-topbar neon-kb-topbar-owned';
-
-  @override
-  bool showTopBarBranding(KnowledgeBaseRenderData data) =>
-      data.showNavigationBar && data.useTopPosition;
-}
-
-class NeubrutalismKnowledgeBaseRenderers extends DefaultKnowledgeBaseRenderers {
-  const NeubrutalismKnowledgeBaseRenderers()
-    : super(id: 'neubrutalism', prefix: 'nb');
-
-  @override
-  bool showTopBarBranding(KnowledgeBaseRenderData data) =>
-      data.showNavigationBar && data.useTopPosition;
-}

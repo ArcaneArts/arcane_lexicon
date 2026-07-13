@@ -29,6 +29,8 @@ dev_dependencies:
 dependency_overrides:
   arcane_jaspr:
     path: ../../arcane_jaspr
+  arcane_lexicon:
+    path: ../
 
 jaspr:
   mode: static

@@ -26,14 +26,14 @@ class KBChangelog extends StatelessWidget {
     }
 
     return ArcaneDiv(
-      classes: 'kb-changelog',
+      classes: <String>['kb-changelog'],
       children: displayVersions.map(_buildVersion).toList(),
     );
   }
 
   Widget _buildVersion(ChangelogVersion version) {
     return ArcaneDiv(
-      classes: 'kb-changelog-version',
+      classes: <String>['kb-changelog-version'],
       styles: const ArcaneStyleData(
         margin: MarginPreset.bottomXl,
         padding: PaddingPreset.lg,
@@ -44,7 +44,7 @@ class KBChangelog extends StatelessWidget {
       children: [
         // Version header
         ArcaneDiv(
-          classes: 'kb-changelog-header',
+          classes: <String>['kb-changelog-header'],
           styles: const ArcaneStyleData(
             display: Display.flex,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -112,7 +112,7 @@ class KBChangelog extends StatelessWidget {
     if (items.isEmpty) return const ArcaneDiv(children: []);
 
     return ArcaneDiv(
-      classes: 'kb-changelog-section',
+      classes: <String>['kb-changelog-section'],
       styles: const ArcaneStyleData(
         margin: MarginPreset.bottomMd,
       ),

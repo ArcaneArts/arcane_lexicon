@@ -33,7 +33,7 @@ class KBRelatedPages extends StatelessWidget {
     if (relatedPages.isEmpty) return const ArcaneDiv(children: []);
 
     return ArcaneDiv(
-      classes: 'kb-related-pages',
+      classes: <String>['kb-related-pages'],
       styles: const ArcaneStyleData(
         margin: MarginPreset.topXl,
         padding: PaddingPreset.topLg,
@@ -50,7 +50,7 @@ class KBRelatedPages extends StatelessWidget {
           children: [Text('Related Pages')],
         ),
         ArcaneDiv(
-          classes: 'kb-related-grid',
+          classes: <String>['kb-related-grid'],
           styles: const ArcaneStyleData(display: Display.grid, gap: Gap.md),
           children: relatedPages
               .take(maxItems)
@@ -113,7 +113,7 @@ class KBRelatedPages extends StatelessWidget {
   Widget _buildRelatedCard(_RelatedPage page) {
     return ArcaneLink(
       href: config.fullPath(page.path),
-      classes: 'kb-related-card',
+      classes: <String>['kb-related-card'],
       styles: const ArcaneStyleData(
         display: Display.flex,
         flexDirection: FlexDirection.column,

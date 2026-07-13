@@ -574,7 +574,7 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
       brightness: _isDark ? Brightness.dark : Brightness.light,
       child: ArcaneDiv(
         id: 'arcane-root',
-        classes: rootClasses,
+        classes: <String>[rootClasses],
         styles: const ArcaneStyleData(
           minHeight: '100vh',
           background: Background.background,
@@ -600,8 +600,12 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
       // so its one synthesized slot must always be active (otherwise the whole
       // page renders hidden).
       bool active = options.length == 1 || option.id == activeStylesheetId;
+      // Theme-specific renderers now live in their theme packages
+      // (arcane_jaspr_shadcn / _neon / _neubrutalism / _win95) and are passed
+      // explicitly via KBStylesheetOption.knowledgeBaseRenderers. Anything that
+      // does not supply one falls back to the default docs chrome.
       KnowledgeBaseRenderers renderers =
-          option.knowledgeBaseRenderers ?? _defaultRenderersFor(option.id);
+          option.knowledgeBaseRenderers ?? const DefaultKnowledgeBaseRenderers();
       ArcaneStylesheet slotStylesheet = option.stylesheet;
       String slotClass = renderers is DefaultKnowledgeBaseRenderers
           ? renderers.slotClass
@@ -666,13 +670,6 @@ class _ThemedKBPageState extends State<ThemedKBPage> {
       ),
     );
   }
-
-  KnowledgeBaseRenderers _defaultRenderersFor(String id) => switch (id) {
-    'shadcn' => const ShadcnKnowledgeBaseRenderers(),
-    'neon' => const NeonKnowledgeBaseRenderers(),
-    'neubrutalism' => const NeubrutalismKnowledgeBaseRenderers(),
-    _ => const DefaultKnowledgeBaseRenderers(),
-  };
 
   List<KBStylesheetOption> _effectiveStylesheetOptions() {
     if (component.stylesheetOptions.isNotEmpty) {

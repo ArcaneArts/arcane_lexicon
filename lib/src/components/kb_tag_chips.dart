@@ -14,7 +14,7 @@ class KBTagList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ArcaneDiv(
-    classes: 'kb-tag-list kb-tag-list-${size.name}',
+    classes: <String>['kb-tag-list kb-tag-list-${size.name}'],
     children: <Widget>[
       for (String tag in tags)
         KBTagChip(label: tag, size: size, showIcon: showIcon),
@@ -35,7 +35,7 @@ class KBTagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ArcaneDiv(
-    classes: 'kb-tag kb-tag-${size.name}',
+    classes: <String>['kb-tag kb-tag-${size.name}'],
     children: <Widget>[
       if (showIcon) ArcaneIcon.tag(size: _iconSize),
       Text(label),

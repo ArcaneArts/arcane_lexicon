@@ -196,7 +196,7 @@ class KBRating extends StatelessWidget {
       [
         // Rating prompt section (shown before voting)
         ArcaneDiv(
-          classes: 'kb-rating-prompt',
+          classes: <String>['kb-rating-prompt'],
           styles: const ArcaneStyleData(
             display: Display.flex,
             flexDirection: FlexDirection.column,
@@ -243,7 +243,7 @@ class KBRating extends StatelessWidget {
 
         // Thank you message (shown after voting, initially hidden)
         ArcaneDiv(
-          classes: 'kb-rating-thanks',
+          classes: <String>['kb-rating-thanks'],
           styles: const ArcaneStyleData(
             display: Display.none,
             textAlign: TextAlign.center,
